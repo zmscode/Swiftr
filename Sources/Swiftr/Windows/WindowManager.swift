@@ -24,14 +24,15 @@ final class WindowManager: NSObject {
 		// where you put the panels is remembered again.
 		libraryPanel = makePanel(
 			title: "Library", autosave: "LibraryPanel.3", frame: Self.defaultFrame(.library),
-			content: LibraryPanel()
+			content: DockPanel(side: .left)
 		)
 		inspectorPanel = makePanel(
 			title: "Inspector", autosave: "InspectorPanel.3", frame: Self.defaultFrame(.inspector),
-			content: InspectorView()
+			content: DockPanel(side: .right)
 		)
 		conditionsPanel = makePanel(
-			title: "Conditions", autosave: "ConditionsPanel.1", frame: Self.defaultFrame(.conditions),
+			title: "Conditions", autosave: "ConditionsPanel.1",
+			frame: Self.defaultFrame(.conditions),
 			keyOnlyIfNeeded: false, content: ConditionsPanel()
 		)
 		conditionsPanel.minSize = NSSize(width: 480, height: 260)
@@ -45,14 +46,17 @@ final class WindowManager: NSObject {
 		installDragCleanup()
 		installMiddleButtonWindowDrag()
 		showPanels()
-		if UserDefaults.standard.bool(forKey: Self.conditionsOpenKey) { conditionsPanel.orderFront(nil) }
+		if UserDefaults.standard.bool(forKey: Self.conditionsOpenKey) {
+			conditionsPanel.orderFront(nil)
+		}
 		if let first = model.project.windows.first { focus(first.id) }
 	}
 
 	// MARK: Panels
 
 	private func makePanel(
-		title: String, autosave: String, frame: NSRect, keyOnlyIfNeeded: Bool = true, content: some View
+		title: String, autosave: String, frame: NSRect, keyOnlyIfNeeded: Bool = true,
+		content: some View
 	) -> NSPanel {
 		let panel = NSPanel(
 			contentRect: frame,
@@ -88,7 +92,8 @@ final class WindowManager: NSObject {
 		let y = screen.maxY - topGap - height
 		switch side {
 		case .library: return NSRect(x: screen.minX + inset, y: y, width: 270, height: height)
-		case .inspector: return NSRect(x: screen.maxX - inset - 310, y: y, width: 310, height: height)
+		case .inspector:
+			return NSRect(x: screen.maxX - inset - 310, y: y, width: 310, height: height)
 		case .conditions:
 			// Along the bottom, between the Library and the Inspector.
 			let left = screen.minX + inset + 270 + inset
@@ -100,6 +105,7 @@ final class WindowManager: NSObject {
 
 	/// Window → Reset Panel Layout.
 	func resetPanelLayout() {
+		model.dock.reset()
 		libraryPanel.setFrame(Self.defaultFrame(.library), display: true, animate: true)
 		inspectorPanel.setFrame(Self.defaultFrame(.inspector), display: true, animate: true)
 		conditionsPanel.setFrame(Self.defaultFrame(.conditions), display: true, animate: true)
@@ -227,7 +233,8 @@ final class WindowManager: NSObject {
 			case .otherMouseDragged:
 				guard let d = dragging else { return event }
 				let now = NSEvent.mouseLocation
-				d.window.setFrameOrigin(NSPoint(x: d.origin.x + now.x - d.grab.x, y: d.origin.y + now.y - d.grab.y))
+				d.window.setFrameOrigin(
+					NSPoint(x: d.origin.x + now.x - d.grab.x, y: d.origin.y + now.y - d.grab.y))
 				return nil
 			default:
 				guard dragging != nil else { return event }
@@ -243,12 +250,19 @@ final class WindowManager: NSObject {
 			matching: [.mouseMoved, .leftMouseUp, .leftMouseDown, .mouseEntered, .mouseExited]
 		) { [weak self] event in
 			if let model = self?.model, NSEvent.pressedMouseButtons & 1 == 0,
-				model.dropIndicator != nil || model.dropPreview != nil || model.layerDropTarget != nil
+				model.dropIndicator != nil || model.dropPreview != nil
+					|| model.layerDropTarget != nil
 			{
 				model.dropIndicator = nil
 				model.layerDropTarget = nil
 				model.endDropPreview()
 				model.draggingPayload = nil
+			}
+			// A tab dragged and let go outside any panel.
+			if let model = self?.model, NSEvent.pressedMouseButtons & 1 == 0,
+				model.dock.draggingTab != nil
+			{
+				model.dock.draggingTab = nil
 			}
 			return event
 		}

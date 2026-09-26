@@ -8,6 +8,19 @@ struct SettingsView: View {
 	}
 
 	static let launchKey = "launchBehavior"
+	/// AppKit's own key for how long the pointer rests before a tooltip shows, in milliseconds.
+	static let tooltipDelayKey = "NSInitialToolTipDelay"
+
+	enum TooltipDelay: Int, CaseIterable {
+		case instant = 100, quick = 350, standard = 1000
+		var title: String {
+			switch self {
+			case .instant: "Almost instantly"
+			case .quick: "Quickly"
+			case .standard: "After a second (macOS default)"
+			}
+		}
+	}
 
 	var body: some View {
 		TabView {
@@ -21,9 +34,14 @@ struct SettingsView: View {
 
 private struct GeneralSettings: View {
 	@AppStorage(SettingsView.launchKey) private var launch = SettingsView.Launch.empty.rawValue
+	@AppStorage(SettingsView.tooltipDelayKey) private var tooltipDelay = SettingsView.TooltipDelay.quick.rawValue
 
 	var body: some View {
 		Form {
+			Picker("Show tooltips", selection: $tooltipDelay) {
+				ForEach(SettingsView.TooltipDelay.allCases, id: \.rawValue) { Text($0.title).tag($0.rawValue) }
+			}
+			.help("How long the pointer rests on a control before its tooltip appears")
 			Picker("When Swiftr opens", selection: $launch) {
 				Text("Start an empty project").tag(SettingsView.Launch.empty.rawValue)
 				Text("Reopen the last project").tag(SettingsView.Launch.reopenLast.rawValue)

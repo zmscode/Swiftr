@@ -24,7 +24,7 @@ struct NodeContent<Children: View>: View {
 			} label: {
 				ButtonLabel(props: p)
 			}
-			.modifier(ButtonAppearance(props: p))
+			.modifier(ButtonAppearance(props: p.themed(model.project.theme)))
 		case .link:
 			Link(p.text, destination: URL(string: p.url) ?? URL(string: "https://www.apple.com")!)
 		// In Preview, control values live in the model so conditions can react to them; while
@@ -36,16 +36,19 @@ struct NodeContent<Children: View>: View {
 		case .textEditor:
 			TextEditor(text: controlValue(.text("")).asText)
 		case .toggle:
-			Toggle(p.text, isOn: controlValue(.bool(p.isOn)).asBool).toggleStyle(option: p.toggleStyle)
+			Toggle(p.text, isOn: controlValue(.bool(p.isOn)).asBool).toggleStyle(
+				option: p.toggleStyle)
 		case .slider:
 			Group {
 				if let step = p.sliderStep, step > 0 {
-					Slider(value: controlValue(.number(p.value)).asNumber, in: p.sliderRange, step: step)
+					Slider(
+						value: controlValue(.number(p.value)).asNumber, in: p.sliderRange,
+						step: step)
 				} else {
 					Slider(value: controlValue(.number(p.value)).asNumber, in: p.sliderRange)
 				}
 			}
-				.frame(minWidth: 100)
+			.frame(minWidth: 100)
 		case .stepper:
 			let count = controlValue(.number(Double(Int(p.value)))).asInt
 			Stepper("\(p.text): \(count.wrappedValue)", value: count)
@@ -241,6 +244,7 @@ struct NodeContent<Children: View>: View {
 
 /// A component and its children rendered without editing behavior.
 struct PlainNode: View {
+	@Environment(DesignModel.self) private var model
 	let node: Node
 	let windowID: UUID
 	let live: Bool
@@ -253,7 +257,7 @@ struct PlainNode: View {
 			ForEach(node.children) { PlainNode(node: $0, windowID: windowID, live: live) }
 		}
 		.modifier(VariantModifier(kind: node.kind, variant: node.props.variant))
-		.modifier(StyleModifier(props: node.props, kind: node.kind))
+		.modifier(StyleModifier(props: node.props.themed(model.project.theme), kind: node.kind))
 	}
 }
 
@@ -366,10 +370,18 @@ struct ButtonLabel: View {
 }
 
 extension Binding where Value == ConditionValue {
-	var asBool: Binding<Bool> { Binding<Bool>(get: { wrappedValue.bool }, set: { wrappedValue = .bool($0) }) }
-	var asNumber: Binding<Double> { Binding<Double>(get: { wrappedValue.number }, set: { wrappedValue = .number($0) }) }
-	var asInt: Binding<Int> { Binding<Int>(get: { Int(wrappedValue.number) }, set: { wrappedValue = .number(Double($0)) }) }
-	var asText: Binding<String> { Binding<String>(get: { wrappedValue.text }, set: { wrappedValue = .text($0) }) }
+	var asBool: Binding<Bool> {
+		Binding<Bool>(get: { wrappedValue.bool }, set: { wrappedValue = .bool($0) })
+	}
+	var asNumber: Binding<Double> {
+		Binding<Double>(get: { wrappedValue.number }, set: { wrappedValue = .number($0) })
+	}
+	var asInt: Binding<Int> {
+		Binding<Int>(get: { Int(wrappedValue.number) }, set: { wrappedValue = .number(Double($0)) })
+	}
+	var asText: Binding<String> {
+		Binding<String>(get: { wrappedValue.text }, set: { wrappedValue = .text($0) })
+	}
 }
 
 /// An SF Symbol with its rendering mode, and its layer colors when rendered as a palette.
@@ -377,7 +389,8 @@ struct SymbolImage: View {
 	let props: Props
 
 	var body: some View {
-		let image = Image(systemName: props.systemImage).symbolRenderingMode(props.symbolRendering.mode)
+		let image = Image(systemName: props.systemImage).symbolRenderingMode(
+			props.symbolRendering.mode)
 		if props.symbolRendering == .palette {
 			let primary = props.foreground?.color ?? .primary
 			let secondary = props.symbolSecondary?.color ?? .secondary

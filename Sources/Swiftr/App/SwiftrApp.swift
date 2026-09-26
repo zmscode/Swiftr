@@ -25,6 +25,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 	let model = DesignModel()
 	private var windowManager: WindowManager?
 
+	func applicationWillFinishLaunching(_ notification: Notification) {
+		// Tooltips (`.help`) show after AppKit's delay, which is long by default. Registered
+		// before any window exists so the tooltip manager picks it up; Settings can change it.
+		UserDefaults.standard.register(defaults: [
+			SettingsView.tooltipDelayKey: SettingsView.TooltipDelay.quick.rawValue
+		])
+	}
+
 	func applicationDidFinishLaunching(_ notification: Notification) {
 		// Needed when launched with `swift run`, so the app gets a Dock icon and focus.
 		NSApp.setActivationPolicy(.regular)

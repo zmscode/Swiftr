@@ -24,6 +24,7 @@ struct CodeGenerator {
 		-> String
 	{
 		var out = "import SwiftUI\n\n" + imagesNote(project) + appSource(project)
+		if let theme = themeSource(project) { out += "\n" + theme }
 		var usesCircleFit = false
 		for window in project.windows {
 			var generator = CodeGenerator(project: project)
@@ -59,6 +60,9 @@ struct CodeGenerator {
 		if usesCircleFit {
 			files.append(("CircleFit.swift", "import SwiftUI\n\n" + circleFitSource))
 		}
+		if let theme = themeSource(project) {
+			files.append(("Theme.swift", "import SwiftUI\n\n" + theme))
+		}
 		return files.map { ($0.path, options.reindent($0.contents)) }
 	}
 
@@ -71,18 +75,23 @@ struct CodeGenerator {
 
 	private static func appSource(_ project: Project) -> String {
 		"@main\nstruct \(project.appName)App: App {\n    var body: some Scene {\n"
-			+ project.windows.enumerated().map { i, w in scene(w, isFirst: i == 0) }.joined(
+			+ project.windows.enumerated().map { i, w in
+				scene(w, isFirst: i == 0, tinted: project.theme.accent != nil)
+			}.joined(
 				separator: "\n\n")
 			+ "\n    }\n}\n"
 	}
 
 	// MARK: Scenes
 
-	private static func scene(_ w: DesignWindow, isFirst: Bool) -> String {
+	private static func scene(_ w: DesignWindow, isFirst: Bool, tinted: Bool) -> String {
 		let s = w.settings
 		var lines = [
 			"Window(\(literal(s.title)), id: \(literal(w.sceneID))) {",
 			"    \(w.viewName)()",
+		]
+		if tinted { lines.append("        .tint(Theme.accent)") }
+		lines += [
 			"}",
 			".defaultSize(width: \(number(s.width)), height: \(number(s.height)))",
 		]
@@ -228,6 +237,7 @@ struct CodeGenerator {
 			}
 			if let glass = p.glass {
 				// Glass buttons use the glass button style and a border shape, not `.glassEffect`.
+				let glass = glass.resolved(project.theme)
 				mods.append(
 					glass.variant == .clear
 						? ".buttonStyle(.glass(.clear))" : ".buttonStyle(.glass)")
@@ -239,7 +249,13 @@ struct CodeGenerator {
 				case .capsule: mods.append(".buttonBorderShape(.capsule)")
 				case .circle: mods.append(".buttonBorderShape(.circle)")
 				}
-				if let tint = glass.tint { mods.append(".tint(\(Self.color(tint)))") }
+				if glass.followsTheme {
+					if project.theme.glass.tintSource != .none {
+						mods.append(".tint(Theme.glassTint)")
+					}
+				} else if let tint = glass.tint {
+					mods.append(".tint(\(Self.color(tint)))")
+				}
 			} else if let style = Self.buttonStyle(p.buttonStyle) {
 				mods.append(".buttonStyle(\(style))")
 			}
@@ -550,10 +566,46 @@ struct CodeGenerator {
 
 		"""
 
+	/// The `Theme` type the app's views refer to, when anything follows the project theme.
+	private static func themeSource(_ project: Project) -> String? {
+		let theme = project.theme
+		guard theme.isUsed(by: project) || !theme.palette.isEmpty else { return nil }
+		var lines = ["/// The app's colour scheme."]
+		lines.append("enum Theme {")
+		if let accent = theme.accent { lines.append("    static let accent = \(color(accent))") }
+		if !theme.palette.isEmpty {
+			lines.append("    static let palette: [Color] = [")
+			lines += theme.palette.map { "        \(color($0))," }
+			lines.append("    ]")
+		}
+		if project.usesThemeGlass {
+			let g = theme.glass
+			switch g.tintSource {
+			case .none: break
+			case .accent:
+				lines.append(
+					"    static let glassTint = \(theme.accent != nil ? "accent" : "Color.accentColor").opacity(0.35)"
+				)
+			case .custom: lines.append("    static let glassTint = \(color(g.customTint))")
+			}
+			var glass = g.variant == .clear ? ".clear" : ".regular"
+			if g.tintSource != .none { glass += ".tint(glassTint)" }
+			if g.interactive { glass += ".interactive()" }
+			lines.append("    /// Liquid Glass for components that follow the theme.")
+			lines.append("    static let glass: Glass = \(glass)")
+		}
+		lines.append("}")
+		return lines.joined(separator: "\n") + "\n"
+	}
+
 	private static func glassEffect(_ g: GlassSettings, cornerRadius: Double) -> String {
 		var glass = g.variant == .clear ? ".clear" : ".regular"
-		if let tint = g.tint { glass += ".tint(\(color(tint)))" }
-		if g.interactive { glass += ".interactive()" }
+		if g.followsTheme {
+			glass = "Theme.glass"
+		} else {
+			if let tint = g.tint { glass += ".tint(\(color(tint)))" }
+			if g.interactive { glass += ".interactive()" }
+		}
 		let shape: String
 		switch g.shape {
 		case .roundedRect: shape = ".rect(cornerRadius: \(number(cornerRadius)))"

@@ -1,82 +1,49 @@
 import SwiftUI
 
-/// Floating panel on the left: mode switch and actions, the component palette, and the layers of every window.
-struct LibraryPanel: View {
+/// The left panel's toolbar: undo and redo, the Conditions and code windows, and Edit/Preview.
+struct LibraryToolbar: View {
 	@Environment(DesignModel.self) private var model
 
 	var body: some View {
-		@Bindable var model = model
-
-		VStack(spacing: 0) {
-			HStack(spacing: 6) {
-				PanelSegmented(
-					selection: $model.isPreviewing,
-					items: [
-						(false, PanelSegmentLabel(text: "Edit", help: "Edit the windows (⌘R)")),
-						(
-							true,
-							PanelSegmentLabel(
-								text: "Preview", help: "Try the windows like the finished app (⌘R)")
-						),
-					]
-				)
-				.frame(width: 130)
-
-				Spacer(minLength: 0)
-
-				PanelIconButton(symbol: "arrow.uturn.backward", help: "Undo (⌘Z)") { model.undo() }
-					.disabled(!model.canUndo)
-				PanelIconButton(symbol: "arrow.uturn.forward", help: "Redo (⇧⌘Z)") { model.redo() }
-					.disabled(!model.canRedo)
-				PanelIconButton(
-					symbol: "point.3.connected.trianglepath.dotted", help: "Conditions (⌥⌘K)"
-				) {
-					model.windowManager?.showConditions()
-				}
-				PanelIconButton(
-					symbol: "chevron.left.forwardslash.chevron.right",
-					help: "Show generated code (⌘E)"
-				) {
-					model.windowManager?.showCode()
-				}
-			}
-			.padding(.horizontal, 10)
-			.padding(.vertical, 8)
-
-			Divider()
-
-			VSplitView {
-				PaletteView()
-					.frame(minHeight: 150, idealHeight: 300)
-				LayersView()
-					.frame(minHeight: 150)
-			}
-			.disabled(model.isPreviewing)
-			.opacity(model.isPreviewing ? 0.5 : 1)
-		}
-	}
-}
-
-/// A panel area's title with optional trailing controls.
-struct SidebarHeader<Trailing: View>: View {
-	let title: String
-	@ViewBuilder var trailing: Trailing
-
-	init(title: String, @ViewBuilder trailing: () -> Trailing = { EmptyView() }) {
-		self.title = title
-		self.trailing = trailing()
-	}
-
-	var body: some View {
 		HStack(spacing: 2) {
-			Text(title).font(.system(size: 11, weight: .semibold))
+			PanelIconButton(symbol: "arrow.uturn.backward", help: "Undo (⌘Z)", size: 14) {
+				model.undo()
+			}
+			.disabled(!model.canUndo || model.isPreviewing)
+			PanelIconButton(symbol: "arrow.uturn.forward", help: "Redo (⇧⌘Z)", size: 14) {
+				model.redo()
+			}
+			.disabled(!model.canRedo || model.isPreviewing)
+
 			Spacer(minLength: 0)
-			trailing
+
+			PanelIconButton(
+				symbol: "point.3.connected.trianglepath.dotted", help: "Conditions (⌥⌘K)",
+				size: 14
+			) {
+				model.windowManager?.showConditions()
+			}
+			PanelIconButton(
+				symbol: "chevron.left.forwardslash.chevron.right",
+				help: "Show generated code (⌘E)", size: 14
+			) {
+				model.windowManager?.showCode()
+			}
+
+			Divider().frame(height: 18).padding(.horizontal, 4)
+
+			PanelIconButton(
+				symbol: model.isPreviewing ? "pencil" : "play.fill",
+				help: model.isPreviewing
+					? "Back to editing (⌘R)"
+					: "Preview: try the windows like the finished app (⌘R)",
+				isActive: model.isPreviewing, size: 14
+			) {
+				model.isPreviewing.toggle()
+			}
 		}
-		.frame(height: 22)
-		.padding(.leading, 12)
-		.padding(.trailing, 8)
-		.padding(.top, 8)
+		.padding(.horizontal, 10)
+		.padding(.vertical, 8)
 	}
 }
 

@@ -114,7 +114,8 @@ struct WindowDropDelegate: DropDelegate {
 	let frames: [UUID: CGRect]
 
 	func validateDrop(info: DropInfo) -> Bool {
-		!model.isPreviewing && info.hasItemsConforming(to: [.plainText, .fileURL])
+		!model.isPreviewing && model.dock.draggingTab == nil
+			&& info.hasItemsConforming(to: [.plainText, .fileURL])
 	}
 
 	func dropUpdated(info: DropInfo) -> DropProposal? {

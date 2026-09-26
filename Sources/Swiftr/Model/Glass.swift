@@ -17,4 +17,19 @@ struct GlassSettings: Codable, Equatable {
 	var tint: RGBA? = nil
 	var interactive = false
 	var shape: GlassShape = .capsule
+	/// Take variant, tint and interactivity from the project theme; shape stays per-component.
+	var followsTheme = true
+}
+
+extension GlassSettings {
+	/// Glass saved before project themes kept its own look.
+	init(from decoder: Decoder) throws {
+		let c = try decoder.container(keyedBy: CodingKeys.self)
+		self.init()
+		variant = (try? c.decodeIfPresent(GlassVariant.self, forKey: .variant)) ?? .regular
+		tint = try? c.decodeIfPresent(RGBA.self, forKey: .tint)
+		interactive = (try? c.decodeIfPresent(Bool.self, forKey: .interactive)) ?? false
+		shape = (try? c.decodeIfPresent(GlassShape.self, forKey: .shape)) ?? .capsule
+		followsTheme = (try? c.decodeIfPresent(Bool.self, forKey: .followsTheme)) ?? false
+	}
 }

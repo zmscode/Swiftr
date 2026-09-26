@@ -30,25 +30,36 @@ struct PanelSection<Content: View>: View {
 	/// What each inspector section does, and the SwiftUI it becomes.
 	static var descriptions: [String: String] {
 		[
-			"Window": "The window's scene settings: title, size, title bar and behavior (a Window scene in the generated app)",
+			"Window":
+				"The window's scene settings: title, size, title bar and behavior (a Window scene in the generated app)",
 			"Content": "What the component shows: its text, symbol, value or options",
 			"Style": "SwiftUI's built-in styles for this component, and its control size",
 			"Layout": "How children are arranged: direction, alignment, spacing and padding",
-			"Size": "Width and height. Hug fits the content, Fixed sets a size, Fill takes the space available (.frame)",
-			"Image": "Which image, its shape, how it fits its frame (.aspectRatio) and which part stays visible when cropped",
-			"Adjustments": "Color and focus effects on the image (.grayscale, .saturation, .brightness, .contrast, .blur)",
+			"Size":
+				"Width and height. Hug fits the content, Fixed sets a size, Fill takes the space available (.frame)",
+			"Image":
+				"Which image, its shape, how it fits its frame (.aspectRatio) and which part stays visible when cropped",
+			"Adjustments":
+				"Color and focus effects on the image (.grayscale, .saturation, .brightness, .contrast, .blur)",
 			"Appearance": "Opacity (.opacity) and corner radius",
 			"Typography": "Font size and weight (.font)",
 			"Fill": "The shape's color (.fill)",
-			"Accent": "The control's highlight color, e.g. a switch's on color or a slider's track (.tint)",
+			"Accent":
+				"The control's highlight color, e.g. a switch's on color or a slider's track (.tint)",
 			"Foreground": "The color of text and symbols (.foregroundStyle)",
-			"Background": "A color behind the component, rounded by the corner radius (.background)",
-			"Border": "An outline around the component, or around an image's shape (.overlay with .strokeBorder)",
+			"Background":
+				"A color behind the component, rounded by the corner radius (.background)",
+			"Border":
+				"An outline around the component, or around an image's shape (.overlay with .strokeBorder)",
 			"Shadow": "A drop shadow (.shadow)",
-			"Liquid Glass": "macOS 26 glass material (.glassEffect, or the glass button style for buttons)",
-			"Condition": "Show this only when a control in this window is set (an if statement in the generated code)",
+			"Theme": "The app's accent colour, scheme palette and shared Liquid Glass look",
+			"Liquid Glass":
+				"macOS 26 glass material (.glassEffect, or the glass button style for buttons)",
+			"Condition":
+				"Show this only when a control in this window is set (an if statement in the generated code)",
 			"Code": "The SwiftUI for this component, ready to copy",
-			"Symbol": "The symbol's colors and how it uses them (.symbolRenderingMode, .foregroundStyle)",
+			"Symbol":
+				"The symbol's colors and how it uses them (.symbolRenderingMode, .foregroundStyle)",
 			"App": "The app's name, used for the generated App struct",
 			"Windows": "Every window in the project; click one to edit it",
 			"Images": "Images stored in the project; their names are used in Image(\"name\")",
@@ -150,22 +161,30 @@ struct PanelTextButton: View {
 struct PanelIconButton: View {
 	let symbol: String
 	var help: String = ""
+	/// Shows the button as switched on, tinted with the panel accent.
+	var isActive = false
+	/// The icon's point size; the hit area grows with it.
+	var size: CGFloat = 11
 	let action: () -> Void
+	@Environment(\.panelTheme) private var panelTheme
 	@State private var isHovered = false
 
 	var body: some View {
 		Button(action: action) {
 			Image(systemName: symbol)
-				.font(.system(size: 11, weight: .medium))
-				.frame(width: 22, height: 22)
+				.font(.system(size: size, weight: .medium))
+				.contentTransition(.symbolEffect(.replace))
+				.frame(width: size * 2, height: size * 2)
 				.background(
-					RoundedRectangle(cornerRadius: 4).fill(
-						Color.primary.opacity(isHovered ? 0.08 : 0))
+					RoundedRectangle(cornerRadius: size * 0.4).fill(
+						isActive
+							? panelTheme.accent.opacity(0.18)
+							: Color.primary.opacity(isHovered ? 0.08 : 0))
 				)
 				.contentShape(Rectangle())
 		}
 		.buttonStyle(.plain)
-		.foregroundStyle(.secondary)
+		.foregroundStyle(isActive ? AnyShapeStyle(panelTheme.accent) : AnyShapeStyle(.secondary))
 		.onHover { isHovered = $0 }
 		.help(help)
 	}

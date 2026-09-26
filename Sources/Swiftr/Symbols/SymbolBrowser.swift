@@ -23,7 +23,9 @@ struct SymbolBrowser: View {
 					.textFieldStyle(.plain)
 					.focused($searchFocused)
 					.onSubmit(onDone)
-					.help("Forgiving search: try abbreviations (cmd), everyday words (settings, close), categories (arrow, number) or near-misses (chevorn)")
+					.help(
+						"Forgiving search: try abbreviations (cmd), everyday words (settings, close), categories (arrow, number) or near-misses (chevorn)"
+					)
 				Menu {
 					ForEach(SymbolCatalog.categories) { c in
 						Button {

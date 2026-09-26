@@ -107,6 +107,12 @@ struct ColorPopover: View {
 	private var documentColors: [RGBA] {
 		var seen = Set<String>()
 		var result: [RGBA] = []
+		// The project's scheme first, then colours already used in the design.
+		let theme = model.project.theme
+		for c in [theme.accent].compactMap({ $0 }) + theme.palette where seen.insert(c.hex).inserted
+		{
+			result.append(c)
+		}
 		for w in model.project.windows {
 			var root = w.root
 			root.forEach { node in

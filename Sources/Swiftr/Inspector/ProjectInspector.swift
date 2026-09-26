@@ -18,7 +18,9 @@ struct ProjectInspector: View {
 				VStack(spacing: 0) {
 					PanelSection("App") {
 						PanelCaption("Name")
-						PanelCommitField(placeholder: "App name", value: model.appNameBinding, help: "The app's name, used for its App struct. Press Return to apply")
+						PanelCommitField(
+							placeholder: "App name", value: model.appNameBinding,
+							help: "The app's name, used for its App struct. Press Return to apply")
 					}
 					PanelSection("Images") {
 						if model.project.images.isEmpty {

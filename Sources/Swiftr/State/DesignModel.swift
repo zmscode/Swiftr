@@ -23,6 +23,8 @@ final class DesignModel {
 	/// The payload of the drag in progress ("new:<kind>" or "move:<uuid>"), recorded when it starts
 	/// so drop targets can be worked out while hovering, before the payload itself can be read.
 	@ObservationIgnored var draggingPayload: String?
+	/// Which tabs the floating panels hold (its own observable state).
+	@ObservationIgnored let dock = DockLayout()
 	var hovered: UUID?
 	/// Containers folded shut in the layers panel.
 	var collapsed: Set<UUID> = []
@@ -183,6 +185,27 @@ final class DesignModel {
 				self.project.appName = name
 			}
 		)
+	}
+
+	/// A binding into the project theme; edits to the same setting undo together.
+	func themeBinding<T: Equatable>(_ path: WritableKeyPath<ProjectTheme, T>) -> Binding<T> {
+		Binding(
+			get: { self.project.theme[keyPath: path] },
+			set: { newValue in
+				guard newValue != self.project.theme[keyPath: path] else { return }
+				self.snapshot(
+					coalescing: EditKey(id: nil, path: (\Project.theme).appending(path: path)))
+				self.project.theme[keyPath: path] = newValue
+			}
+		)
+	}
+
+	/// Switches to a preset's colours, keeping the glass settings.
+	func applyThemePreset(_ preset: ThemePreset) {
+		let theme = preset.theme(keepingGlass: project.theme.glass)
+		guard theme != project.theme else { return }
+		snapshot()
+		project.theme = theme
 	}
 
 	// MARK: Selection

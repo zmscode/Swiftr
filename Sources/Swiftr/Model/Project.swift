@@ -62,6 +62,8 @@ struct Project: Codable, Equatable {
 	var windows: [DesignWindow] = [DesignWindow()]
 	/// Images used by Image components, stored in the project file itself.
 	var images: [ImageAsset] = []
+	/// The app's colour scheme and shared Liquid Glass look.
+	var theme = ProjectTheme()
 
 	func image(_ id: UUID?) -> ImageAsset? { id.flatMap { id in images.first { $0.id == id } } }
 
@@ -168,6 +170,7 @@ extension Project {
 		appName = (try? c.decodeIfPresent(String.self, forKey: .appName)) ?? appName
 		windows = try c.decode([DesignWindow].self, forKey: .windows)
 		images = (try? c.decodeIfPresent([ImageAsset].self, forKey: .images)) ?? []
+		theme = (try? c.decodeIfPresent(ProjectTheme.self, forKey: .theme)) ?? ProjectTheme()
 	}
 }
 
@@ -201,7 +204,9 @@ extension Project {
 	/// Whether `node` may go at `target`: not into itself or its own children, not next to itself,
 	/// and only where the container accepts it (e.g. a Control Group takes buttons and toggles).
 	func canDrop(_ node: Node, movingID: UUID?, at target: DropTarget) -> Bool {
-		guard let parentID = parentID(for: target), let parent = find(parentID) else { return false }
+		guard let parentID = parentID(for: target), let parent = find(parentID) else {
+			return false
+		}
 		if movingID != nil {
 			if node.find(parentID) != nil { return false }
 			if case .beside(let sibling, _) = target, sibling == movingID { return false }
@@ -218,7 +223,8 @@ extension Project {
 		if let movingID {
 			// Removing the node first shifts later siblings in the same container up by one.
 			if case .at(let parentID, let index) = target, parent(of: movingID)?.id == parentID,
-				let old = find(parentID)?.children.firstIndex(where: { $0.id == movingID }), old < index
+				let old = find(parentID)?.children.firstIndex(where: { $0.id == movingID }),
+				old < index
 			{
 				target = .at(parentID, index: index - 1)
 			}
@@ -246,7 +252,8 @@ extension DesignWindow {
 		settings = (try? c.decodeIfPresent(WindowSettings.self, forKey: .settings)) ?? settings
 		root = try c.decode(Node.self, forKey: .root)
 		position = try? c.decodeIfPresent(CGPoint.self, forKey: .position)
-		conditions = (try? c.decodeIfPresent(ConditionGraph.self, forKey: .conditions)) ?? ConditionGraph()
+		conditions =
+			(try? c.decodeIfPresent(ConditionGraph.self, forKey: .conditions)) ?? ConditionGraph()
 	}
 }
 

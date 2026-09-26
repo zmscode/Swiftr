@@ -8,11 +8,6 @@ struct LayersView: View {
 
 	var body: some View {
 		VStack(alignment: .leading, spacing: 4) {
-			SidebarHeader(title: "Layers") {
-				PanelIconButton(symbol: "macwindow.badge.plus", help: "New window (⌘N)") {
-					model.addWindow()
-				}
-			}
 			ScrollView {
 				let insideSelection = descendantsOfSelection
 				LazyVStack(spacing: 1) {
@@ -120,7 +115,10 @@ struct LayerRow: View {
 		.if(!isRoot) {
 			$0.dragSource(payload: "move:\(node.id.uuidString)", model: model, kind: node.kind)
 		}
-		.onDrop(of: [.plainText], delegate: LayerDropDelegate(model: model, nodeID: node.id, target: dropTarget))
+		.onDrop(
+			of: [.plainText],
+			delegate: LayerDropDelegate(model: model, nodeID: node.id, target: dropTarget)
+		)
 		.contextMenu { NodeMenu(id: node.id) }
 		.help(
 			isRoot
@@ -212,7 +210,9 @@ struct LayerRow: View {
 		if node.kind.isContainer {
 			let showsChildren = !node.children.isEmpty && !model.collapsed.contains(node.id)
 			if location.y < Self.rowHeight * 0.25 { return .beside(node.id, after: false) }
-			if location.y > Self.rowHeight * 0.75 && !showsChildren { return .beside(node.id, after: true) }
+			if location.y > Self.rowHeight * 0.75 && !showsChildren {
+				return .beside(node.id, after: true)
+			}
 			return .into(node.id)
 		}
 		return .beside(node.id, after: location.y > Self.rowHeight / 2)
@@ -225,13 +225,17 @@ struct LayerRow: View {
 		case .into(let id) where id == node.id:
 			RoundedRectangle(cornerRadius: 5)
 				.fill(panelTheme.accent.opacity(0.15))
-				.overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(panelTheme.accent, lineWidth: 1.5))
+				.overlay(
+					RoundedRectangle(cornerRadius: 5).strokeBorder(
+						panelTheme.accent, lineWidth: 1.5)
+				)
 				.allowsHitTesting(false)
 		case .beside(let id, let after) where id == node.id:
 			VStack {
 				if after { Spacer() }
 				HStack(spacing: 0) {
-					Circle().strokeBorder(panelTheme.accent, lineWidth: 1.5).frame(width: 6, height: 6)
+					Circle().strokeBorder(panelTheme.accent, lineWidth: 1.5).frame(
+						width: 6, height: 6)
 					Rectangle().fill(panelTheme.accent).frame(height: 2)
 				}
 				.padding(.leading, 20 + CGFloat(item.depth) * 14)
@@ -253,7 +257,8 @@ struct LayerDropDelegate: DropDelegate {
 	let target: (CGPoint) -> DropTarget
 
 	func validateDrop(info: DropInfo) -> Bool {
-		!model.isPreviewing && info.hasItemsConforming(to: [.plainText])
+		!model.isPreviewing && model.dock.draggingTab == nil
+			&& info.hasItemsConforming(to: [.plainText])
 	}
 
 	func dropUpdated(info: DropInfo) -> DropProposal? {
@@ -264,7 +269,8 @@ struct LayerDropDelegate: DropDelegate {
 		let marker = allowed ? target : nil
 		if model.layerDropTarget != marker { model.layerDropTarget = marker }
 		guard allowed else { return DropProposal(operation: .forbidden) }
-		return DropProposal(operation: model.draggingPayload?.hasPrefix("move:") == true ? .move : .copy)
+		return DropProposal(
+			operation: model.draggingPayload?.hasPrefix("move:") == true ? .move : .copy)
 	}
 
 	func dropExited(info: DropInfo) {

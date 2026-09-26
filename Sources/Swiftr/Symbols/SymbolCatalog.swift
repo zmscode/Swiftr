@@ -40,7 +40,8 @@ enum SymbolCatalog {
 	}
 
 	private static let index = SymbolSearch(
-		names: names, keywords: keywords, categories: categoriesBySymbol, categoryTitles: categoryTitles)
+		names: names, keywords: keywords, categories: categoriesBySymbol,
+		categoryTitles: categoryTitles)
 
 	private static func plist(_ name: String) -> Any? {
 		let url = URL(

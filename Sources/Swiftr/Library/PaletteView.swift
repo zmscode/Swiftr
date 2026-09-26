@@ -16,16 +16,9 @@ struct PaletteView: View {
 
 	var body: some View {
 		VStack(alignment: .leading, spacing: 6) {
-			SidebarHeader(title: "Components") {
-				PanelIconButton(
-					symbol: asList ? "square.grid.2x2" : "list.bullet",
-					help: asList ? "Show as grid" : "Show as list"
-				) {
-					asList.toggle()
-				}
-			}
 			SearchField(text: $search)
 				.padding(.horizontal, 10)
+				.padding(.top, 8)
 
 			ScrollView {
 				VStack(alignment: .leading, spacing: 2) {

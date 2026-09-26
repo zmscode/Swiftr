@@ -33,7 +33,10 @@ struct NodeView: View {
 			children(axis: axis)
 		}
 		.modifier(VariantModifier(kind: node.kind, variant: node.props.variant))
-		.modifier(StyleModifier(props: node.props, kind: node.kind, fillsWindow: isWindowContent))
+		.modifier(
+			StyleModifier(
+				props: node.props.themed(model.project.theme), kind: node.kind,
+				fillsWindow: isWindowContent))
 
 		if model.isPreviewing {
 			// Conditions apply in Preview: a component whose condition is false isn't there at all.
@@ -43,7 +46,8 @@ struct NodeView: View {
 				.opacity(0.45)
 				.overlay(
 					RoundedRectangle(cornerRadius: 3)
-						.strokeBorder(Color.selectionBlue, style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
+						.strokeBorder(
+							Color.selectionBlue, style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
 				)
 				.allowsHitTesting(false)
 		} else if node.kind.isContainer {
@@ -126,7 +130,9 @@ struct NodeView: View {
 		let event = NSApp.currentEvent
 		if let flags = event?.modifierFlags, flags.contains(.shift) || flags.contains(.command) {
 			model.select(node.id, extending: true)
-		} else if event?.clickCount == 2, node.kind == .photo, model.nsImage(node.props.imageID) == nil {
+		} else if event?.clickCount == 2, node.kind == .photo,
+			model.nsImage(node.props.imageID) == nil
+		{
 			// An empty image asks for a file first; once it has one, double-click shows handles.
 			model.select(node.id)
 			model.chooseImage(for: node.id)
@@ -159,7 +165,8 @@ struct NodeView: View {
 				ShapeHandles(node: node, mode: .fontScale)
 			} else if node.kind == .divider {
 				// A divider runs across its stack: horizontal in a vertical stack, and vice versa.
-				ShapeHandles(node: node, mode: .length(parentAxis == .horizontal ? .vertical : .horizontal))
+				ShapeHandles(
+					node: node, mode: .length(parentAxis == .horizontal ? .vertical : .horizontal))
 			} else if [.text, .button, .link, .toggle].contains(node.kind) && !editsSymbol {
 				InlineTextEditor(node: node)
 			}

@@ -106,14 +106,22 @@ struct NodeInspector: View {
 					])
 			}
 			VStack(alignment: .leading, spacing: 5) {
-				PanelCheckbox(title: "Resizable", isOn: win(\.resizable), help: "Let people resize the window. Off makes it a fixed size (.windowResizability(.contentSize))")
+				PanelCheckbox(
+					title: "Resizable", isOn: win(\.resizable),
+					help:
+						"Let people resize the window. Off makes it a fixed size (.windowResizability(.contentSize))"
+				)
 				PanelCheckbox(
 					title: "Float above other windows", isOn: win(\.floating),
 					help: "Applied in Preview mode, so it doesn't cover the panels while editing")
-				PanelCheckbox(title: "Open at launch", isOn: win(\.opensAtLaunch), help: "Open this window when the app starts (.defaultLaunchBehavior)")
+				PanelCheckbox(
+					title: "Open at launch", isOn: win(\.opensAtLaunch),
+					help: "Open this window when the app starts (.defaultLaunchBehavior)")
 			}
 			PanelCaptioned("View name") {
-				PanelCommitField(placeholder: "View name", value: model.viewNameBinding(window.id), help: "The name of this window's SwiftUI view struct. Press Return to apply")
+				PanelCommitField(
+					placeholder: "View name", value: model.viewNameBinding(window.id),
+					help: "The name of this window's SwiftUI view struct. Press Return to apply")
 			}
 		}
 	}
@@ -138,7 +146,9 @@ struct NodeInspector: View {
 						? "Title (read by VoiceOver for an icon-only button)" : nil)
 			}
 			if kind.hasPlaceholder {
-				PanelTextField(placeholder: "Placeholder", text: bind(\.placeholder), help: "Hint text shown while the field is empty")
+				PanelTextField(
+					placeholder: "Placeholder", text: bind(\.placeholder),
+					help: "Hint text shown while the field is empty")
 			}
 			if kind == .button {
 				PanelCaptioned("Shows") {
@@ -162,37 +172,54 @@ struct NodeInspector: View {
 				PanelCaptioned("Action") {
 					PanelMenu(
 						label: .icon("cursorarrow.click"), selection: bind(\.action),
-						options: actionOptions, help: "What the button does when clicked (try it in Preview)")
+						options: actionOptions,
+						help: "What the button does when clicked (try it in Preview)")
 				}
 			}
 			if kind == .link {
-				PanelTextField(placeholder: "URL", text: bind(\.url), monospaced: true, help: "The web address the link opens")
+				PanelTextField(
+					placeholder: "URL", text: bind(\.url), monospaced: true,
+					help: "The web address the link opens")
 			}
 			if kind == .toggle {
-				PanelCheckbox(title: "Initially on", isOn: bind(\.isOn), help: "Whether the toggle starts switched on")
+				PanelCheckbox(
+					title: "Initially on", isOn: bind(\.isOn),
+					help: "Whether the toggle starts switched on")
 			}
 			if kind == .disclosureGroup {
-				PanelCheckbox(title: "Initially expanded", isOn: bind(\.isOn), help: "Whether the group starts open")
+				PanelCheckbox(
+					title: "Initially expanded", isOn: bind(\.isOn),
+					help: "Whether the group starts open")
 			}
 			if kind == .slider {
 				PanelCaptioned("Value") {
 					PanelNumberField(
 						label: .icon("slider.horizontal.below.rectangle"), value: bind(\.value),
-						range: props.sliderRange, step: (props.sliderRange.upperBound - props.sliderRange.lowerBound) / 100,
+						range: props.sliderRange,
+						step: (props.sliderRange.upperBound - props.sliderRange.lowerBound) / 100,
 						help: "Initial value")
 				}
 				PanelCaptioned("Range") {
 					PanelGrid {
-						PanelNumberField(label: .letter("Min"), value: bind(\.sliderMin), range: -1_000_000...1_000_000, help: "Minimum")
+						PanelNumberField(
+							label: .letter("Min"), value: bind(\.sliderMin),
+							range: -1_000_000...1_000_000, help: "Minimum")
 					} b: {
-						PanelNumberField(label: .letter("Max"), value: bind(\.sliderMax), range: -1_000_000...1_000_000, help: "Maximum")
+						PanelNumberField(
+							label: .letter("Max"), value: bind(\.sliderMax),
+							range: -1_000_000...1_000_000, help: "Maximum")
 					}
 				}
 				PanelCaptioned("Step (adds tick marks)") {
 					PanelNumberField(
 						label: .icon("stairs"),
-						value: Binding(get: { props.sliderStep ?? 0 }, set: { bind(\.sliderStep).wrappedValue = $0 > 0 ? $0 : nil }),
-						range: 0...1_000_000, help: "0 slides smoothly; a step snaps to it and shows a tick mark at each step")
+						value: Binding(
+							get: { props.sliderStep ?? 0 },
+							set: { bind(\.sliderStep).wrappedValue = $0 > 0 ? $0 : nil }),
+						range: 0...1_000_000,
+						help:
+							"0 slides smoothly; a step snaps to it and shows a tick mark at each step"
+					)
 					.frame(maxWidth: 120)
 				}
 			}
@@ -201,7 +228,9 @@ struct NodeInspector: View {
 					label: .letter("Value"), value: bind(\.value), range: -10_000...10_000)
 			}
 			if kind == .progress {
-				PanelCheckbox(title: "Indeterminate", isOn: bind(\.indeterminate), help: "Show activity without a value (a spinner), for work of unknown length")
+				PanelCheckbox(
+					title: "Indeterminate", isOn: bind(\.indeterminate),
+					help: "Show activity without a value (a spinner), for work of unknown length")
 				if !props.indeterminate {
 					PanelPercentField(label: .letter("Value"), value: bind(\.value))
 				}
@@ -225,7 +254,9 @@ struct NodeInspector: View {
 				}
 			}
 			if kind == .tabView {
-				PanelTextButton(title: "Add Tab", symbol: "plus", help: "Add another tab to the end") { model.addTab(to: id) }
+				PanelTextButton(
+					title: "Add Tab", symbol: "plus", help: "Add another tab to the end"
+				) { model.addTab(to: id) }
 			}
 			if kind == .splitView {
 				PanelSegmented(
@@ -280,7 +311,9 @@ struct NodeInspector: View {
 				}
 			}
 		}
-		PanelTextButton(title: "Add option", symbol: "plus", help: "Add another choice to the picker") {
+		PanelTextButton(
+			title: "Add option", symbol: "plus", help: "Add another choice to the picker"
+		) {
 			model.updateProps(id, key: \Props.selectedIndex) {
 				$0.options.append("Option \($0.options.count + 1)")
 			}
@@ -331,7 +364,8 @@ struct NodeInspector: View {
 				} else {
 					PanelMenu(
 						label: .icon("paintbrush"), selection: current,
-						options: variants.map { ($0.id, $0.title) }, help: "The component's SwiftUI style")
+						options: variants.map { ($0.id, $0.title) },
+						help: "The component's SwiftUI style")
 				}
 			}
 			if kind.usesControlSize {
@@ -430,9 +464,14 @@ struct NodeInspector: View {
 			}
 			if kind == .photo {
 				HStack {
-					PanelCheckbox(title: "Keep aspect ratio", isOn: bind(\.lockAspect), help: "Keep the image's proportions when resizing it")
+					PanelCheckbox(
+						title: "Keep aspect ratio", isOn: bind(\.lockAspect),
+						help: "Keep the image's proportions when resizing it")
 					Spacer()
-					PanelTextButton(title: "Original Size", symbol: "arrow.uturn.backward", help: "Reset to the image's own pixel size") {
+					PanelTextButton(
+						title: "Original Size", symbol: "arrow.uturn.backward",
+						help: "Reset to the image's own pixel size"
+					) {
 						model.resetImageSize(id)
 					}
 				}
@@ -461,10 +500,14 @@ struct NodeInspector: View {
 				VStack(alignment: .leading, spacing: 4) {
 					PanelMenu(
 						selection: bind(\.imageID),
-						options: [(nil, "No image")] + model.project.images.map { ($0.id, $0.name) },
+						options: [(nil, "No image")]
+							+ model.project.images.map { ($0.id, $0.name) },
 						help: "Choose one of the project's images"
 					)
-					PanelTextButton(title: "Choose File…", symbol: "folder", help: "Add an image file to the project and show it here") {
+					PanelTextButton(
+						title: "Choose File…", symbol: "folder",
+						help: "Add an image file to the project and show it here"
+					) {
 						model.chooseImage(for: id)
 					}
 				}
@@ -473,7 +516,10 @@ struct NodeInspector: View {
 				PanelSegmented(
 					selection: bind(\.imageShape),
 					items: [
-						(.roundedRect, .icon("rectangle", "Rounded rectangle (uses corner radius)")),
+						(
+							.roundedRect,
+							.icon("rectangle", "Rounded rectangle (uses corner radius)")
+						),
 						(.circle, .icon("circle", "Circle")),
 						(.capsule, .icon("capsule", "Capsule")),
 					])
@@ -516,18 +562,39 @@ struct NodeInspector: View {
 				PanelSegmented(
 					selection: bind(\.symbolRendering),
 					items: [
-						(.monochrome, PanelSegmentLabel(text: "Mono", help: "One color for the whole symbol")),
-						(.hierarchical, PanelSegmentLabel(text: "Layers", help: "Shades of the color, one per layer of the symbol")),
-						(.palette, PanelSegmentLabel(text: "Palette", help: "A separate color for each layer")),
-						(.multicolor, PanelSegmentLabel(text: "Multi", help: "The symbol's own colors, where it has them")),
+						(
+							.monochrome,
+							PanelSegmentLabel(text: "Mono", help: "One color for the whole symbol")
+						),
+						(
+							.hierarchical,
+							PanelSegmentLabel(
+								text: "Layers",
+								help: "Shades of the color, one per layer of the symbol")
+						),
+						(
+							.palette,
+							PanelSegmentLabel(
+								text: "Palette", help: "A separate color for each layer")
+						),
+						(
+							.multicolor,
+							PanelSegmentLabel(
+								text: "Multi", help: "The symbol's own colors, where it has them")
+						),
 					])
 			}
 			symbolColor(
-				props.symbolRendering == .palette ? "Primary" : "Color", \.foreground, fallback: .blue,
+				props.symbolRendering == .palette ? "Primary" : "Color", \.foreground,
+				fallback: .blue,
 				help: "The symbol's color (.foregroundStyle)")
 			if props.symbolRendering == .palette {
-				symbolColor("Secondary", \.symbolSecondary, fallback: RGBA(r: 0.55, g: 0.55, b: 0.6), help: "The second layer's color")
-				symbolColor("Tertiary", \.symbolTertiary, fallback: RGBA(r: 0.8, g: 0.8, b: 0.85), help: "The third layer's color (for symbols with three layers)")
+				symbolColor(
+					"Secondary", \.symbolSecondary, fallback: RGBA(r: 0.55, g: 0.55, b: 0.6),
+					help: "The second layer's color")
+				symbolColor(
+					"Tertiary", \.symbolTertiary, fallback: RGBA(r: 0.8, g: 0.8, b: 0.85),
+					help: "The third layer's color (for symbols with three layers)")
 			}
 			if props.symbolRendering == .multicolor {
 				PanelCaption("Parts with built-in colors keep them; the rest use the color above.")
@@ -537,7 +604,9 @@ struct NodeInspector: View {
 
 	/// An optional symbol color: a row with − once set, or a button to add it.
 	@ViewBuilder
-	private func symbolColor(_ title: String, _ path: WritableKeyPath<Props, RGBA?>, fallback: RGBA, help: String) -> some View {
+	private func symbolColor(
+		_ title: String, _ path: WritableKeyPath<Props, RGBA?>, fallback: RGBA, help: String
+	) -> some View {
 		if let color = props[keyPath: path] {
 			PanelCaptioned(title, help: help) {
 				PanelColorRow(
@@ -559,27 +628,37 @@ struct NodeInspector: View {
 			PanelGrid {
 				PanelNumberField(
 					label: .icon("circle.lefthalf.filled.righthalf.striped.horizontal"),
-					value: adjust(\.grayscale, scale: 100), range: 0...100, unit: "%", help: "Grayscale")
+					value: adjust(\.grayscale, scale: 100), range: 0...100, unit: "%",
+					help: "Grayscale")
 			} b: {
 				PanelNumberField(
-					label: .icon("drop"), value: adjust(\.saturation, scale: 100), range: 0...300, unit: "%",
+					label: .icon("drop"), value: adjust(\.saturation, scale: 100), range: 0...300,
+					unit: "%",
 					help: "Saturation (100% is unchanged)")
 			}
 			PanelGrid {
 				PanelNumberField(
-					label: .icon("sun.max"), value: adjust(\.brightness, scale: 100), range: -100...100, unit: "%",
+					label: .icon("sun.max"), value: adjust(\.brightness, scale: 100),
+					range: -100...100, unit: "%",
 					help: "Brightness (0% is unchanged)")
 			} b: {
 				PanelNumberField(
-					label: .icon("circle.righthalf.filled"), value: adjust(\.contrast, scale: 100), range: 0...300,
+					label: .icon("circle.righthalf.filled"), value: adjust(\.contrast, scale: 100),
+					range: 0...300,
 					unit: "%", help: "Contrast (100% is unchanged)")
 			}
 			HStack {
-				PanelNumberField(label: .icon("aqi.medium"), value: adjust(\.blur, scale: 1), range: 0...50, unit: "pt", help: "Blur")
-					.frame(maxWidth: 120)
+				PanelNumberField(
+					label: .icon("aqi.medium"), value: adjust(\.blur, scale: 1), range: 0...50,
+					unit: "pt", help: "Blur"
+				)
+				.frame(maxWidth: 120)
 				Spacer()
 				if !a.isIdentity {
-					PanelTextButton(title: "Reset", symbol: "arrow.counterclockwise", help: "Undo all adjustments") {
+					PanelTextButton(
+						title: "Reset", symbol: "arrow.counterclockwise",
+						help: "Undo all adjustments"
+					) {
 						bind(\.adjustments).wrappedValue = ImageAdjustments()
 					}
 				}
@@ -588,10 +667,16 @@ struct NodeInspector: View {
 	}
 
 	/// An image adjustment shown scaled (e.g. 0...1 as a percentage).
-	private func adjust(_ path: WritableKeyPath<ImageAdjustments, Double>, scale: Double) -> Binding<Double> {
+	private func adjust(_ path: WritableKeyPath<ImageAdjustments, Double>, scale: Double)
+		-> Binding<Double>
+	{
 		Binding(
 			get: { (props.adjustments[keyPath: path] * scale).rounded() },
-			set: { value in model.updateProps(id, key: \Props.adjustments) { $0.adjustments[keyPath: path] = value / scale } }
+			set: { value in
+				model.updateProps(id, key: \Props.adjustments) {
+					$0.adjustments[keyPath: path] = value / scale
+				}
+			}
 		)
 	}
 
@@ -600,11 +685,16 @@ struct NodeInspector: View {
 		if let border = props.border {
 			PanelSection("Border", onRemove: { bind(\.border).wrappedValue = nil }) {
 				PanelColorRow(color: optional(\.border, \.color, current: border))
-				PanelNumberField(label: .icon("lineweight"), value: optional(\.border, \.width, current: border), range: 0...50, unit: "pt", help: "Width")
-					.frame(maxWidth: 120)
+				PanelNumberField(
+					label: .icon("lineweight"), value: optional(\.border, \.width, current: border),
+					range: 0...50, unit: "pt", help: "Width"
+				)
+				.frame(maxWidth: 120)
 			}
 		} else {
-			PanelSection("Border", onAdd: { bind(\.border).wrappedValue = BorderSettings() }) { EmptyView() }
+			PanelSection("Border", onAdd: { bind(\.border).wrappedValue = BorderSettings() }) {
+				EmptyView()
+			}
 		}
 	}
 
@@ -614,23 +704,35 @@ struct NodeInspector: View {
 			PanelSection("Shadow", onRemove: { bind(\.shadow).wrappedValue = nil }) {
 				PanelColorRow(color: optional(\.shadow, \.color, current: shadow))
 				HStack(spacing: 6) {
-					PanelNumberField(label: .letter("X"), value: optional(\.shadow, \.x, current: shadow), range: -200...200, help: "Horizontal offset")
-					PanelNumberField(label: .letter("Y"), value: optional(\.shadow, \.y, current: shadow), range: -200...200, help: "Vertical offset")
-					PanelNumberField(label: .icon("aqi.medium"), value: optional(\.shadow, \.radius, current: shadow), range: 0...200, help: "Blur radius")
+					PanelNumberField(
+						label: .letter("X"), value: optional(\.shadow, \.x, current: shadow),
+						range: -200...200, help: "Horizontal offset")
+					PanelNumberField(
+						label: .letter("Y"), value: optional(\.shadow, \.y, current: shadow),
+						range: -200...200, help: "Vertical offset")
+					PanelNumberField(
+						label: .icon("aqi.medium"),
+						value: optional(\.shadow, \.radius, current: shadow), range: 0...200,
+						help: "Blur radius")
 				}
 			}
 		} else {
-			PanelSection("Shadow", onAdd: { bind(\.shadow).wrappedValue = ShadowSettings() }) { EmptyView() }
+			PanelSection("Shadow", onAdd: { bind(\.shadow).wrappedValue = ShadowSettings() }) {
+				EmptyView()
+			}
 		}
 	}
 
 	/// A binding into one field of an optional property group (border, shadow) that's present.
 	private func optional<Group: Equatable, Value: Equatable>(
-		_ group: WritableKeyPath<Props, Group?>, _ field: WritableKeyPath<Group, Value>, current: Group
+		_ group: WritableKeyPath<Props, Group?>, _ field: WritableKeyPath<Group, Value>,
+		current: Group
 	) -> Binding<Value> {
 		Binding(
 			get: { props[keyPath: group]?[keyPath: field] ?? current[keyPath: field] },
-			set: { value in model.updateProps(id, key: group) { $0[keyPath: group]?[keyPath: field] = value } }
+			set: { value in
+				model.updateProps(id, key: group) { $0[keyPath: group]?[keyPath: field] = value }
+			}
 		)
 	}
 
@@ -675,7 +777,8 @@ struct NodeInspector: View {
 			} b: {
 				PanelMenu(
 					selection: bind(\.weight),
-					options: FontWeight.allCases.map { ($0, $0.rawValue.capitalized) }, help: "Font weight")
+					options: FontWeight.allCases.map { ($0, $0.rawValue.capitalized) },
+					help: "Font weight")
 			}
 		}
 	}
@@ -703,10 +806,19 @@ struct NodeInspector: View {
 	private var glassSection: some View {
 		if let glass = props.glass {
 			PanelSection("Liquid Glass", onRemove: { bind(\.glass).wrappedValue = nil }) {
+				PanelCheckbox(
+					title: "Follow project theme", isOn: glassBinding(\.followsTheme, glass),
+					help:
+						"Use the project's glass variant, tint and interactivity (set with nothing selected)"
+				)
 				PanelGrid {
-					PanelSegmented(
-						selection: glassBinding(\.variant, glass),
-						items: [(.regular, .text("Regular")), (.clear, .text("Clear"))])
+					if glass.followsTheme {
+						PanelCaption(model.project.theme.glass.summary)
+					} else {
+						PanelSegmented(
+							selection: glassBinding(\.variant, glass),
+							items: [(.regular, .text("Regular")), (.clear, .text("Clear"))])
+					}
 				} b: {
 					PanelSegmented(
 						selection: glassBinding(\.shape, glass),
@@ -719,7 +831,8 @@ struct NodeInspector: View {
 							(.circle, .icon("circle", "Circle")),
 						])
 				}
-				if let tint = glass.tint {
+				if glass.followsTheme {
+				} else if let tint = glass.tint {
 					PanelColorRow(
 						color: Binding(
 							get: { tint }, set: { glassBinding(\.tint, glass).wrappedValue = $0 }),
@@ -732,7 +845,7 @@ struct NodeInspector: View {
 				}
 				if kind == .button {
 					PanelCaption("Uses the glass button style; the shape sets its border.")
-				} else {
+				} else if !glass.followsTheme {
 					PanelCheckbox(
 						title: "Interactive", isOn: glassBinding(\.interactive, glass),
 						help: "Reacts to touch and pointer, like system glass controls")

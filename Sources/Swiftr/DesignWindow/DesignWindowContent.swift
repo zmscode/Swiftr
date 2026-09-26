@@ -11,6 +11,8 @@ struct DesignWindowContent: View {
 		// During a drag over the layers list, show the layout as it would be after the drop.
 		if let window = model.displayedProject.window(windowID) {
 			NodeView(node: window.root, windowID: windowID, parentAxis: nil)
+				// The theme accent reaches every control; a component's own accent still wins.
+				.tint(model.project.theme.accent?.color)
 				.background {
 					// Space around the root (e.g. under a hidden title bar) selects the root.
 					if !model.isPreviewing {
