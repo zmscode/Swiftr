@@ -1,0 +1,168 @@
+import AppKit
+import SwiftUI
+
+struct RGBA: Codable, Equatable {
+	var r: Double, g: Double, b: Double, a: Double
+
+	init(r: Double, g: Double, b: Double, a: Double = 1) {
+		self.r = r
+		self.g = g
+		self.b = b
+		self.a = a
+	}
+
+	init(_ color: Color) {
+		let ns = NSColor(color).usingColorSpace(.sRGB) ?? .black
+		r = Double(ns.redComponent)
+		g = Double(ns.greenComponent)
+		b = Double(ns.blueComponent)
+		a = Double(ns.alphaComponent)
+	}
+
+	var color: Color { Color(.sRGB, red: r, green: g, blue: b, opacity: a) }
+
+	var hex: String {
+		let v = [r, g, b].map { Int(($0 * 255).rounded()).clamped(to: 0...255) }
+		return String(format: "#%02X%02X%02X", v[0], v[1], v[2])
+	}
+
+	static let black = RGBA(r: 0, g: 0, b: 0)
+	static let white = RGBA(r: 1, g: 1, b: 1)
+	static let blue = RGBA(r: 0.0, g: 0.48, b: 1.0)
+	static let lightGray = RGBA(r: 0.9, g: 0.9, b: 0.92)
+}
+
+enum FontWeight: String, Codable, CaseIterable, Identifiable {
+	case regular, medium, semibold, bold, heavy
+	var id: String { rawValue }
+	var fontWeight: Font.Weight {
+		switch self {
+		case .regular: .regular
+		case .medium: .medium
+		case .semibold: .semibold
+		case .bold: .bold
+		case .heavy: .heavy
+		}
+	}
+}
+
+enum StackAlign: String, Codable, CaseIterable, Identifiable {
+	case start, center, end
+	var id: String { rawValue }
+
+	var horizontal: HorizontalAlignment {
+		switch self {
+		case .start: .leading
+		case .center: .center
+		case .end: .trailing
+		}
+	}
+
+	var vertical: VerticalAlignment {
+		switch self {
+		case .start: .top
+		case .center: .center
+		case .end: .bottom
+		}
+	}
+
+	/// Name used in the inspector and in generated code, depending on stack direction.
+	func name(for kind: ComponentKind) -> String {
+		switch (self, kind) {
+		case (.start, .hstack): "top"
+		case (.end, .hstack): "bottom"
+		case (.start, _): "leading"
+		case (.end, _): "trailing"
+		default: "center"
+		}
+	}
+}
+
+/// How an image fits its frame: whole image visible, or filling the frame and cropped.
+/// How an image fits its frame: whole image visible (fit), filling the frame and cropped (fill),
+/// or distorted to the frame's exact shape (stretch).
+enum ContentModeOption: String, Codable, CaseIterable, Identifiable {
+	case fit, fill, stretch
+	var id: String { rawValue }
+}
+
+/// A point within a frame, e.g. which part of an image stays visible when it's cropped.
+enum AnchorOption: String, Codable, CaseIterable, Identifiable {
+	case topLeading, top, topTrailing, leading, center, trailing, bottomLeading, bottom,
+		bottomTrailing
+	var id: String { rawValue }
+
+	var alignment: Alignment {
+		switch self {
+		case .topLeading: .topLeading
+		case .top: .top
+		case .topTrailing: .topTrailing
+		case .leading: .leading
+		case .center: .center
+		case .trailing: .trailing
+		case .bottomLeading: .bottomLeading
+		case .bottom: .bottom
+		case .bottomTrailing: .bottomTrailing
+		}
+	}
+}
+
+/// How a toggle looks. Switch is the default here (macOS's own default is a checkbox).
+enum ToggleStyleOption: String, Codable, CaseIterable, Identifiable {
+	case `switch`, checkbox, button
+	var id: String { rawValue }
+}
+
+/// What a button shows: its title, its symbol, or both.
+enum ButtonDisplay: String, Codable, CaseIterable, Identifiable {
+	case title, icon, titleAndIcon
+	var id: String { rawValue }
+}
+
+enum ButtonStyleOption: String, Codable, CaseIterable, Identifiable {
+	case automatic, bordered, borderedProminent, borderless, plain, glass, glassProminent
+	var id: String { rawValue }
+	var title: String {
+		switch self {
+		case .automatic: "Automatic"
+		case .bordered: "Bordered"
+		case .borderedProminent: "Prominent"
+		case .borderless: "Borderless"
+		case .plain: "Plain"
+		case .glass: "Glass"
+		case .glassProminent: "Glass Prominent"
+		}
+	}
+}
+
+enum ControlSizeOption: String, Codable, CaseIterable, Identifiable {
+	case mini, small, regular, large, extraLarge
+	var id: String { rawValue }
+	var title: String { self == .extraLarge ? "XL" : rawValue.prefix(1).uppercased() }
+	var controlSize: ControlSize {
+		switch self {
+		case .mini: .mini
+		case .small: .small
+		case .regular: .regular
+		case .large: .large
+		case .extraLarge: .extraLarge
+		}
+	}
+}
+
+enum PickerStyleOption: String, Codable, CaseIterable, Identifiable {
+	case menu, segmented, radioGroup
+	var id: String { rawValue }
+	var title: String { self == .radioGroup ? "Radio" : rawValue.capitalized }
+}
+
+enum DateComponentsOption: String, Codable, CaseIterable, Identifiable {
+	case date, time, both
+	var id: String { rawValue }
+	var title: String { self == .both ? "Date & Time" : rawValue.capitalized }
+}
+
+enum ScrollAxisOption: String, Codable, CaseIterable, Identifiable {
+	case vertical, horizontal
+	var id: String { rawValue }
+}

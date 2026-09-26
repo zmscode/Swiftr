@@ -1,0 +1,24 @@
+{
+  "originHash" : "fc81db35ab3edc36b509c9dc60c102e754f151adf24d21439170ff0dfd0af50a",
+  "pins" : [
+    {
+      "identity" : "sliders",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/kieranb662/Sliders.git",
+      "state" : {
+        "revision" : "ec520b31bfe2a19740421311fe0a24cae57ed422",
+        "version" : "2.0.2"
+      }
+    },
+    {
+      "identity" : "swiftui-color-kit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/kieranb662/SwiftUI-Color-Kit",
+      "state" : {
+        "branch" : "master",
+        "revision" : "eae68bcf5cabfeb86f491bacdab3726051ded545"
+      }
+    }
+  ],
+  "version" : 3
+}
