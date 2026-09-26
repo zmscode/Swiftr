@@ -5,7 +5,6 @@ struct AppCommands: Commands {
 	let model: DesignModel
 
 	var body: some Commands {
-		CommandGroup(replacing: .appSettings) {}
 
 		CommandGroup(replacing: .newItem) {
 			Button("New Window") { model.addWindow() }

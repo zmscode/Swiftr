@@ -375,7 +375,9 @@ final class DesignModel {
 	/// The component a payload places, and the id it's moving from (nil for a new one).
 	private func dropped(_ payload: String?) -> (Node, UUID?)? {
 		guard let payload else { return nil }
-		if payload.hasPrefix("new:"), let kind = ComponentKind(rawValue: String(payload.dropFirst(4))) {
+		if payload.hasPrefix("new:"),
+			let kind = ComponentKind(rawValue: String(payload.dropFirst(4)))
+		{
 			// Reuse the same new component while previewing, so the preview and drop agree.
 			if let cached = previewNode, cached.payload == payload { return (cached.node, nil) }
 			return (Node.make(kind), nil)
@@ -854,10 +856,44 @@ final class DesignModel {
 		}
 	}
 
+	/// File → Export as Swift…: one file, or a folder of files, as set in Settings → Export.
 	func exportSwift() {
-		FilePanels.save(
-			CodeGenerator.generate(project), suggestedName: CodeGenerator.fileName(project),
-			type: .swiftSource)
+		let options = CodeExportOptions.current
+		guard options.layout == .folder else {
+			FilePanels.save(
+				CodeGenerator.generate(project, options: options),
+				suggestedName: CodeGenerator.fileName(project),
+				type: .swiftSource)
+			return
+		}
+		let panel = NSOpenPanel()
+		panel.canChooseDirectories = true
+		panel.canChooseFiles = false
+		panel.canCreateDirectories = true
+		panel.prompt = "Export"
+		panel.message =
+			"Choose a folder for \(CodeGenerator.fileName(project)) and the \(options.viewsFolder) folder."
+		guard panel.runModal() == .OK, let folder = panel.url else { return }
+		do {
+			for file in CodeGenerator.files(project, options: options) {
+				let url = folder.appendingPathComponent(file.path)
+				try FileManager.default.createDirectory(
+					at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+				try file.contents.write(to: url, atomically: true, encoding: .utf8)
+			}
+			NSWorkspace.shared.activateFileViewerSelecting([
+				folder.appendingPathComponent(CodeGenerator.fileName(project))
+			])
+		} catch {
+			NSAlert(error: error).runModal()
+		}
+	}
+
+	/// Settings → General → "Reopen the last project": used at launch.
+	func reopenLastProject() {
+		guard let url = recentProjects.first, FileManager.default.fileExists(atPath: url.path)
+		else { return }
+		open(url, confirmed: true)
 	}
 
 	// MARK: Recent projects

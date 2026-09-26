@@ -28,7 +28,9 @@ struct LibraryPanel: View {
 					.disabled(!model.canUndo)
 				PanelIconButton(symbol: "arrow.uturn.forward", help: "Redo (⇧⌘Z)") { model.redo() }
 					.disabled(!model.canRedo)
-				PanelIconButton(symbol: "point.3.connected.trianglepath.dotted", help: "Conditions (⌥⌘K)") {
+				PanelIconButton(
+					symbol: "point.3.connected.trianglepath.dotted", help: "Conditions (⌥⌘K)"
+				) {
 					model.windowManager?.showConditions()
 				}
 				PanelIconButton(
@@ -37,19 +39,6 @@ struct LibraryPanel: View {
 				) {
 					model.windowManager?.showCode()
 				}
-				Menu {
-					ThemeMenuContent()
-				} label: {
-					Image(systemName: "paintpalette")
-						.font(.system(size: 11, weight: .medium))
-						.foregroundStyle(.secondary)
-						.frame(width: 22, height: 22)
-				}
-				.menuStyle(.button)
-				.buttonStyle(.plain)
-				.menuIndicator(.hidden)
-				.fixedSize()
-				.help("Theme")
 			}
 			.padding(.horizontal, 10)
 			.padding(.vertical, 8)

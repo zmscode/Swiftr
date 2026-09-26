@@ -19,19 +19,11 @@ struct CodeGenerator {
 
 	static func fileName(_ project: Project) -> String { "\(project.appName)App.swift" }
 
-	static func generate(_ project: Project) -> String {
-		var out = "import SwiftUI\n\n"
-		if !project.images.isEmpty {
-			// Image("name") needs these in the app's asset catalog.
-			out += "// Images used: \(project.images.map(\.name).joined(separator: ", "))\n"
-			out +=
-				"// Add them to Assets.xcassets (Swiftr: File → Export Images to Asset Catalog…).\n\n"
-		}
-		out += "@main\nstruct \(project.appName)App: App {\n    var body: some Scene {\n"
-		out += project.windows.enumerated().map { i, w in scene(w, isFirst: i == 0) }.joined(
-			separator: "\n\n")
-		out += "\n    }\n}\n"
-
+	/// The whole app in one file.
+	static func generate(_ project: Project, options: CodeExportOptions = CodeExportOptions())
+		-> String
+	{
+		var out = "import SwiftUI\n\n" + imagesNote(project) + appSource(project)
 		var usesCircleFit = false
 		for window in project.windows {
 			var generator = CodeGenerator(project: project)
@@ -39,11 +31,49 @@ struct CodeGenerator {
 			usesCircleFit = usesCircleFit || generator.usesCircleFit
 		}
 		if usesCircleFit { out += "\n" + circleFitSource }
-
-		if let first = project.windows.first {
+		if options.includePreviews, let first = project.windows.first {
 			out += "\n#Preview {\n    \(first.viewName)()\n}\n"
 		}
-		return out
+		return options.reindent(out)
+	}
+
+	/// The app as separate files: `<App>App.swift`, one file per view in the views folder, and any
+	/// helper the views use. Paths are relative to the export folder.
+	static func files(_ project: Project, options: CodeExportOptions) -> [(
+		path: String, contents: String
+	)] {
+		var files = [
+			(
+				path: fileName(project),
+				contents: "import SwiftUI\n\n" + imagesNote(project) + appSource(project)
+			)
+		]
+		var usesCircleFit = false
+		for window in project.windows {
+			var generator = CodeGenerator(project: project)
+			var source = "import SwiftUI\n\n" + generator.view(window)
+			if options.includePreviews { source += "\n#Preview {\n    \(window.viewName)()\n}\n" }
+			files.append(("\(options.viewsFolder)/\(window.viewName).swift", source))
+			usesCircleFit = usesCircleFit || generator.usesCircleFit
+		}
+		if usesCircleFit {
+			files.append(("CircleFit.swift", "import SwiftUI\n\n" + circleFitSource))
+		}
+		return files.map { ($0.path, options.reindent($0.contents)) }
+	}
+
+	private static func imagesNote(_ project: Project) -> String {
+		guard !project.images.isEmpty else { return "" }
+		// Image("name") needs these in the app's asset catalog.
+		return "// Images used: \(project.images.map(\.name).joined(separator: ", "))\n"
+			+ "// Add them to Assets.xcassets (Swiftr: File → Export Images to Asset Catalog…).\n\n"
+	}
+
+	private static func appSource(_ project: Project) -> String {
+		"@main\nstruct \(project.appName)App: App {\n    var body: some Scene {\n"
+			+ project.windows.enumerated().map { i, w in scene(w, isFirst: i == 0) }.joined(
+				separator: "\n\n")
+			+ "\n    }\n}\n"
 	}
 
 	// MARK: Scenes
@@ -132,7 +162,8 @@ struct CodeGenerator {
 			let test = boolSwift(condition)
 		else { return emitComponent(node, level: level, isRoot: isRoot) }
 		let pad = String(repeating: "    ", count: level)
-		return "\(pad)if \(test) {\n" + emitComponent(node, level: level + 1, isRoot: isRoot) + "\n\(pad)}"
+		return "\(pad)if \(test) {\n" + emitComponent(node, level: level + 1, isRoot: isRoot)
+			+ "\n\(pad)}"
 	}
 
 	private mutating func emitComponent(_ node: Node, level: Int, isRoot: Bool = false) -> String {
@@ -237,7 +268,8 @@ struct CodeGenerator {
 			let name = newState(node, "value", type: "Double", initial: Self.number(p.value))
 			let range = p.sliderRange
 			let step = p.sliderStep.map { $0 > 0 ? ", step: \(Self.number($0))" : "" } ?? ""
-			head = "Slider(value: $\(name), in: \(Self.number(range.lowerBound))...\(Self.number(range.upperBound))\(step))"
+			head =
+				"Slider(value: $\(name), in: \(Self.number(range.lowerBound))...\(Self.number(range.upperBound))\(step))"
 		case .stepper:
 			let name = newState(node, "count", type: "Int", initial: String(Int(p.value)))
 			let title = String(Self.literal(p.text).dropLast()) + ": \\(\(name))\""
@@ -272,7 +304,10 @@ struct CodeGenerator {
 				mods.append(".symbolRenderingMode(.\(p.symbolRendering.rawValue))")
 			}
 			if p.symbolRendering == .palette {
-				var colors = [p.foreground.map(Self.color) ?? ".primary", p.symbolSecondary.map(Self.color) ?? ".secondary"]
+				var colors = [
+					p.foreground.map(Self.color) ?? ".primary",
+					p.symbolSecondary.map(Self.color) ?? ".secondary",
+				]
 				if let tertiary = p.symbolTertiary { colors.append(Self.color(tertiary)) }
 				mods.append(".foregroundStyle(\(colors.joined(separator: ", ")))")
 			}
@@ -330,7 +365,8 @@ struct CodeGenerator {
 				p.text.isEmpty ? "Section" : "Section(\(Self.literal(p.text)))", node.children,
 				level: level)
 		case .disclosureGroup:
-			let name = newState(node, "isExpanded", type: "Bool", initial: p.isOn ? "true" : "false")
+			let name = newState(
+				node, "isExpanded", type: "Bool", initial: p.isOn ? "true" : "false")
 			let inner = String(repeating: "    ", count: level + 1)
 			head =
 				"DisclosureGroup(\(Self.literal(p.text)), isExpanded: $\(name)) {\n\(inner)"
@@ -419,12 +455,17 @@ struct CodeGenerator {
 		if node.kind == .photo {
 			switch p.imageShape {
 			case .roundedRect:
-				mods.append(p.cornerRadius > 0 ? ".clipShape(.rect(cornerRadius: \(Self.number(p.cornerRadius))))" : ".clipped()")
+				mods.append(
+					p.cornerRadius > 0
+						? ".clipShape(.rect(cornerRadius: \(Self.number(p.cornerRadius))))"
+						: ".clipped()")
 			case .circle: mods.append(".clipShape(.circle)")
 			case .capsule: mods.append(".clipShape(.capsule)")
 			}
 			// An image's border follows its shape.
-			if let border = p.border { mods.append(Self.borderOverlay(border, shape: Self.imageShapeCode(p))) }
+			if let border = p.border {
+				mods.append(Self.borderOverlay(border, shape: Self.imageShapeCode(p)))
+			}
 		}
 		if p.padding > 0 { mods.append(".padding(\(Self.number(p.padding)))") }
 		if let bg = p.background {
@@ -434,7 +475,10 @@ struct CodeGenerator {
 		}
 		// Other components' borders go around their background.
 		if node.kind != .photo, let border = p.border {
-			mods.append(Self.borderOverlay(border, shape: "RoundedRectangle(cornerRadius: \(Self.number(p.cornerRadius)))"))
+			mods.append(
+				Self.borderOverlay(
+					border, shape: "RoundedRectangle(cornerRadius: \(Self.number(p.cornerRadius)))")
+			)
 		}
 		if let glass = p.glass, node.kind != .button {
 			if glass.shape == .circle {
@@ -533,7 +577,9 @@ struct CodeGenerator {
 		}
 	}
 
-	private mutating func newState(_ node: Node, _ base: String, type: String, initial: String) -> String {
+	private mutating func newState(_ node: Node, _ base: String, type: String, initial: String)
+		-> String
+	{
 		let name = stateNames[node.id] ?? uniqueName(base)
 		states.append("@State private var \(name): \(type) = \(initial)")
 		return name
@@ -557,7 +603,9 @@ struct CodeGenerator {
 			guard let fallback = Self.statefulDefaults[node.kind] else { continue }
 			let p = node.props
 			let candidates = [p.variableName, node.name, p.text, p.placeholder]
-			let base = candidates.lazy.compactMap { $0 }.map(Self.camelCase).first { !$0.isEmpty } ?? fallback
+			let base =
+				candidates.lazy.compactMap { $0 }.map(Self.camelCase).first { !$0.isEmpty }
+				?? fallback
 			stateNames[node.id] = uniqueName(base)
 		}
 	}
@@ -577,15 +625,20 @@ struct CodeGenerator {
 	static func camelCase(_ text: String) -> String {
 		let words = text.split { !$0.isLetter && !$0.isNumber }.map(String.init)
 		guard let first = words.first else { return "" }
-		var name = first.lowercased() + words.dropFirst().map { $0.prefix(1).uppercased() + $0.dropFirst() }.joined()
+		var name =
+			first.lowercased()
+			+ words.dropFirst().map { $0.prefix(1).uppercased() + $0.dropFirst() }.joined()
 		if let c = name.first, c.isNumber { name = "_" + name }
 		return name
 	}
 
 	private static let swiftKeywords: Set<String> = [
-		"as", "break", "case", "catch", "class", "continue", "default", "defer", "do", "else", "enum",
-		"extension", "false", "for", "func", "if", "import", "in", "init", "is", "let", "nil", "private",
-		"protocol", "public", "repeat", "return", "self", "static", "struct", "super", "switch", "throw",
+		"as", "break", "case", "catch", "class", "continue", "default", "defer", "do", "else",
+		"enum",
+		"extension", "false", "for", "func", "if", "import", "in", "init", "is", "let", "nil",
+		"private",
+		"protocol", "public", "repeat", "return", "self", "static", "struct", "super", "switch",
+		"throw",
 		"true", "try", "var", "where", "while", "some", "any", "View", "Text",
 	]
 
@@ -656,10 +709,11 @@ struct CodeGenerator {
 					left = "Double(\(l))"
 				}
 				if valueType(a) == .text, case .constant(let v) = b { r = Self.literal(v.text) }
-				let symbol = [
-					CompareOp.equal: "==", .notEqual: "!=", .less: "<", .lessOrEqual: "<=",
-					.greater: ">", .greaterOrEqual: ">=",
-				][op] ?? "=="
+				let symbol =
+					[
+						CompareOp.equal: "==", .notEqual: "!=", .less: "<", .lessOrEqual: "<=",
+						.greater: ">", .greaterOrEqual: ">=",
+					][op] ?? "=="
 				return "\(left) \(symbol) \(r)"
 			}
 		}

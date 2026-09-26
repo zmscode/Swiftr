@@ -11,6 +11,12 @@ struct SwiftrApp: App {
 			.defaultLaunchBehavior(.suppressed)
 			.commandsRemoved()
 			.commands { AppCommands(model: appDelegate.model) }
+
+		// Swiftr → Settings… (⌘,)
+		Settings {
+			SettingsView()
+				.environment(appDelegate.model)
+		}
 	}
 }
 
@@ -24,7 +30,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		NSApp.setActivationPolicy(.regular)
 		// `Swiftr file.json` opens that file. Load it before the windows are created, so they open
 		// with its design. Otherwise start with an empty project.
-		if let path = Self.fileArgument() { model.openFromCommandLine(path) }
+		if let path = Self.fileArgument() {
+			model.openFromCommandLine(path)
+		} else if UserDefaults.standard.string(forKey: SettingsView.launchKey)
+			== SettingsView.Launch.reopenLast.rawValue
+		{
+			model.reopenLastProject()
+		}
 		windowManager = WindowManager(model: model)
 		NSApp.activate(ignoringOtherApps: true)
 	}

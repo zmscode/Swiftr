@@ -32,19 +32,15 @@ enum SymbolCatalog {
 		}
 	}()
 
+	/// Forgiving search (see `SymbolSearch`), limited to a category unless it's "all".
 	static func search(_ query: String, category: String?) -> [String] {
-		let q = query.trimmingCharacters(in: .whitespaces).lowercased()
-		return names.filter { name in
-			if let category, category != "all",
-				!(categoriesBySymbol[name]?.contains(category) ?? false)
-			{
-				return false
-			}
-			guard !q.isEmpty else { return true }
-			if name.contains(q) { return true }
-			return keywords[name]?.contains { $0.contains(q) } ?? false
-		}
+		let results = index.search(query)
+		guard let category, category != "all" else { return results }
+		return results.filter { categoriesBySymbol[$0]?.contains(category) ?? false }
 	}
+
+	private static let index = SymbolSearch(
+		names: names, keywords: keywords, categories: categoriesBySymbol, categoryTitles: categoryTitles)
 
 	private static func plist(_ name: String) -> Any? {
 		let url = URL(

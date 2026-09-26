@@ -13,7 +13,9 @@ extension CodeTheme {
 	/// The theme's distinct syntax colors, for cycling through icon colors.
 	var iconColors: [String] {
 		var seen = Set<String>()
-		return [keyword, type, member, number, string, attribute].filter { seen.insert($0.uppercased()).inserted }
+		return [keyword, type, member, number, string, attribute].filter {
+			seen.insert($0.uppercased()).inserted
+		}
 	}
 
 	/// Icon colors in themed panels: each family of components takes one of the theme's syntax colors.
@@ -127,8 +129,6 @@ struct ThemeMenuContent: View {
 				}
 			}
 		}
-		Divider()
-		Toggle("Theme Library & Inspector", isOn: $themePanels)
 	}
 
 	@ViewBuilder

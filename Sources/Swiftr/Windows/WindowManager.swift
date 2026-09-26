@@ -13,6 +13,7 @@ final class WindowManager: NSObject {
 	private var designWindows: [UUID: DesignWindowController] = [:]
 	private var keyMonitor: Any?
 	private var dragCleanupMonitor: Any?
+	private var windowDragMonitor: Any?
 
 	init(model: DesignModel) {
 		self.model = model
@@ -42,6 +43,7 @@ final class WindowManager: NSObject {
 		observeModel()
 		installKeyMonitor()
 		installDragCleanup()
+		installMiddleButtonWindowDrag()
 		showPanels()
 		if UserDefaults.standard.bool(forKey: Self.conditionsOpenKey) { conditionsPanel.orderFront(nil) }
 		if let first = model.project.windows.first { focus(first.id) }
@@ -206,6 +208,36 @@ final class WindowManager: NSObject {
 	/// A drag that ends without a drop (cancelled, or released somewhere that doesn't accept it)
 	/// doesn't always tell the window it left, which would leave the drop marker showing. Clear it
 	/// on the next mouse event once no button is held.
+	/// Middle-button drag anywhere on a design window moves the window, so you don't have to aim
+	/// for its title bar (or find one, with a hidden or plain title bar).
+	private func installMiddleButtonWindowDrag() {
+		var dragging: (window: NSWindow, grab: NSPoint, origin: NSPoint)?
+		windowDragMonitor = NSEvent.addLocalMonitorForEvents(
+			matching: [.otherMouseDown, .otherMouseDragged, .otherMouseUp]
+		) { [weak self] event in
+			guard let self, event.buttonNumber == 2 else { return event }
+			switch event.type {
+			case .otherMouseDown:
+				guard let window = event.window,
+					self.designWindows.values.contains(where: { $0.window === window })
+				else { return event }
+				dragging = (window, NSEvent.mouseLocation, window.frame.origin)
+				NSCursor.closedHand.push()
+				return nil
+			case .otherMouseDragged:
+				guard let d = dragging else { return event }
+				let now = NSEvent.mouseLocation
+				d.window.setFrameOrigin(NSPoint(x: d.origin.x + now.x - d.grab.x, y: d.origin.y + now.y - d.grab.y))
+				return nil
+			default:
+				guard dragging != nil else { return event }
+				dragging = nil
+				NSCursor.pop()
+				return nil
+			}
+		}
+	}
+
 	private func installDragCleanup() {
 		dragCleanupMonitor = NSEvent.addLocalMonitorForEvents(
 			matching: [.mouseMoved, .leftMouseUp, .leftMouseDown, .mouseEntered, .mouseExited]
