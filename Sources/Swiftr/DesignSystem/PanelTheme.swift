@@ -32,12 +32,12 @@ extension Optional where Wrapped == CodeTheme {
 	/// The theme's accent, or the standard selection blue in native panels.
 	var accent: Color { self?.accent ?? .selectionBlue }
 
-	/// A component's icon color: cycles through the theme's syntax colors by Library position, so
-	/// neighboring tiles differ (the native colors when panels aren't themed).
+	/// A component's icon color: one of the theme's syntax colors per Library group, cycling so
+	/// neighboring groups differ (the native colors when panels aren't themed).
 	func tint(_ kind: ComponentKind) -> Color {
 		guard let theme = self else { return kind.tint }
 		let colors = theme.iconColors
-		return theme.color(colors[kind.libraryIndex % colors.count])
+		return theme.color(colors[kind.groupIndex % colors.count])
 	}
 }
 

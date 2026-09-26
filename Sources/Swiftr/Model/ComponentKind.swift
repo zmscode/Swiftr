@@ -176,18 +176,18 @@ enum ComponentKind: String, Codable, CaseIterable, Identifiable {
 	}
 
 	/// Accent used for this kind's icon in the palette and layers list.
-	/// Colors cycle by position in the Library, so neighboring tiles differ. The same color is
-	/// used for the component in Layers and the Inspector.
-	var tint: Color { Self.nativeTints[libraryIndex % Self.nativeTints.count] }
+	/// One color per Library group, cycling so neighboring groups differ. The same color is used
+	/// for the component in Layers and the Inspector.
+	var tint: Color { Self.nativeTints[groupIndex % Self.nativeTints.count] }
 
 	static let nativeTints: [Color] = [.blue, .orange, .purple, .teal, .indigo]
 
-	/// Where this kind sits in the Library (kinds not listed there, like Column, go after).
-	var libraryIndex: Int {
-		Self.libraryOrder.firstIndex(of: self) ?? Self.libraryOrder.count + (Self.allCases.firstIndex(of: self) ?? 0)
+	/// Which Library group this kind is in. Kinds not listed there go with their parent's group
+	/// (a Column with Split View, a Tab with Tab View).
+	var groupIndex: Int {
+		let kind: ComponentKind = self == .pane ? .splitView : self
+		return Self.groups.firstIndex { $0.kinds.contains(kind) } ?? 0
 	}
-
-	private static let libraryOrder: [ComponentKind] = groups.flatMap(\.kinds)
 
 	static let groups: [(title: String, kinds: [ComponentKind])] = [
 		("Text", [.text, .label, .link]),
