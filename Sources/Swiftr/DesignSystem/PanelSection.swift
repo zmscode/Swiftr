@@ -11,6 +11,7 @@ struct PanelSection<Content: View>: View {
 	var help: String? = nil
 	@ViewBuilder let content: Content
 	@AppStorage private var collapsed: Bool
+	@Environment(\.panelTheme) private var panelTheme
 	@State private var isHovered = false
 
 	init(
@@ -26,6 +27,16 @@ struct PanelSection<Content: View>: View {
 	}
 
 	private var isEmpty: Bool { onAdd != nil }
+
+	/// Each section's symbol, shown before its title.
+	static var icons: [String: String] { [
+		"Window": "macwindow", "Content": "text.alignleft", "Style": "paintbrush",
+		"Layout": "square.split.2x1", "Size": "arrow.up.left.and.arrow.down.right",
+		"Image": "photo", "Appearance": "circle.lefthalf.filled", "Colors": "paintpalette",
+		"Effects": "sparkles", "Add": "plus.circle", "Condition": "questionmark.diamond",
+		"Code": "chevron.left.forwardslash.chevron.right", "Symbol": "star.square",
+		"App": "app", "Windows": "macwindow.on.rectangle", "Images": "photo.on.rectangle",
+	] }
 
 	/// What each inspector section does, and the SwiftUI it becomes.
 	static var descriptions: [String: String] {
@@ -53,6 +64,9 @@ struct PanelSection<Content: View>: View {
 				"An outline around the component, or around an image's shape (.overlay with .strokeBorder)",
 			"Shadow": "A drop shadow (.shadow)",
 			"Theme": "The app's accent colour, scheme palette and shared Liquid Glass look",
+			"Colors": "Fill, accent (.tint), text and symbol (.foregroundStyle) and background colors",
+			"Effects": "Border, shadow and Liquid Glass. Click one to edit it beside the panel",
+			"Add": "Add a color, effect or condition to this component",
 			"Liquid Glass":
 				"macOS 26 glass material (.glassEffect, or the glass button style for buttons)",
 			"Condition":
@@ -78,6 +92,12 @@ struct PanelSection<Content: View>: View {
 							.rotationEffect(.degrees(collapsed ? 0 : 90))
 							.foregroundStyle(.tertiary)
 							.opacity(!isEmpty && (isHovered || collapsed) ? 1 : 0)
+						if let icon = Self.icons[title] {
+							Image(systemName: icon)
+								.font(.system(size: 10, weight: .medium))
+								.foregroundStyle(panelTheme.accent)
+								.frame(width: 14)
+						}
 						Text(title)
 							.font(.system(size: 11, weight: .semibold))
 							.tooltip(help ?? Self.descriptions[title])

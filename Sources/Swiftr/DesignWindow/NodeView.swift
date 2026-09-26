@@ -80,7 +80,7 @@ struct NodeView: View {
 				.overlay { inPlaceEditor }
 				.popover(isPresented: symbolBrowserShown, arrowEdge: .trailing) {
 					SymbolBrowser(selection: model.propBinding(node.id, \.systemImage)) {
-						model.inPlaceEdit = nil
+						if node.kind == .image { model.symbolBrowserOpen = false } else { model.inPlaceEdit = nil }
 					}
 				}
 		}
@@ -136,6 +136,9 @@ struct NodeView: View {
 			// An empty image asks for a file first; once it has one, double-click shows handles.
 			model.select(node.id)
 			model.chooseImage(for: node.id)
+		} else if node.kind == .image, isEditingInPlace, event?.clickCount != 2 {
+			// A symbol already being edited: the next click opens the symbol browser.
+			model.symbolBrowserOpen = true
 		} else if event?.clickCount == 2, !node.kind.isContainer {
 			model.beginInPlaceEdit(node.id)
 		} else {
@@ -150,8 +153,13 @@ struct NodeView: View {
 
 	private var symbolBrowserShown: Binding<Bool> {
 		Binding(
-			get: { isEditingInPlace && editsSymbol },
-			set: { if !$0 { model.inPlaceEdit = nil } }
+			// A lone symbol waits for another click; labels and icon buttons open it straight away.
+			get: { isEditingInPlace && editsSymbol && (node.kind != .image || model.symbolBrowserOpen) },
+			set: { open in
+				guard !open else { return }
+				// Closing the browser leaves a symbol's size handles up; others stop editing.
+				if node.kind == .image { model.symbolBrowserOpen = false } else { model.inPlaceEdit = nil }
+			}
 		)
 	}
 
@@ -161,8 +169,21 @@ struct NodeView: View {
 			if node.kind.isShape || node.kind == .photo {
 				ShapeHandles(node: node)
 			} else if node.kind == .image {
-				// A symbol's size is its font size; the symbol browser opens alongside.
+				// A symbol's size is its font size; another click opens the symbol browser.
 				ShapeHandles(node: node, mode: .fontScale)
+					.overlay(alignment: .top) {
+						if !model.symbolBrowserOpen {
+							Text("Click to change symbol")
+								.font(.system(size: 10, weight: .medium))
+								.foregroundStyle(.white)
+								.padding(.horizontal, 5)
+								.padding(.vertical, 1.5)
+								.background(Color.selectionBlue, in: RoundedRectangle(cornerRadius: 3))
+								.fixedSize()
+								.offset(y: -20)
+								.allowsHitTesting(false)
+						}
+					}
 			} else if node.kind == .divider {
 				// A divider runs across its stack: horizontal in a vertical stack, and vice versa.
 				ShapeHandles(

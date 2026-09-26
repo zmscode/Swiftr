@@ -69,6 +69,15 @@ struct NodeContent<Children: View>: View {
 			} else {
 				ProgressView(value: p.value)
 			}
+		case .gauge:
+			Gauge(value: p.value) { Text(p.text) }
+		case .colorPicker:
+			LiveState(p.fill.color) { color in ColorPicker(p.text, selection: color) }
+				.id("\(live)\(p.fill.hex)")
+		case .labeledContent:
+			LabeledContent(p.text, value: p.detail)
+		case .unavailable:
+			ContentUnavailableView(p.text, systemImage: p.systemImage, description: Text(p.detail))
 		case .image:
 			SymbolImage(props: p)
 		case .rectangle:
@@ -124,6 +133,8 @@ struct NodeContent<Children: View>: View {
 			}
 		case .form:
 			Form { children(.vertical) }
+		case .list:
+			List { children(.vertical) }
 		case .section:
 			Section(p.text) { children(.vertical) }
 		case .disclosureGroup:

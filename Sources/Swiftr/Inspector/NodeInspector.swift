@@ -32,21 +32,12 @@ struct NodeInspector: View {
 					if kind.isContainer && kind != .menu { layoutSection }
 					if kind.hasSize { sizeSection }
 					if kind == .photo { imageSection }
-					if kind == .photo { adjustmentsSection }
 					appearanceSection
-					if kind.usesFont { typographySection }
-					if kind.isShape { fillSection }
-					if kind.usesAccent { colorSection("Accent", \.accent, fallback: .blue) }
-					// A symbol's color lives in its Symbol section.
-					if kind.supportsForeground && kind != .image {
-						colorSection("Foreground", \.foreground, fallback: .black)
+					if !addItems.isEmpty {
+						PanelSection("Add") { PanelAddBar(items: addItems) }
 					}
-					if kind.supportsBackground {
-						colorSection("Background", \.background, fallback: .lightGray)
-					}
-					if kind.supportsBorderAndShadow { borderSection }
-					if kind.supportsBorderAndShadow { shadowSection }
-					if kind.supportsGlass { glassSection }
+					if hasColors { colorsSection }
+					if hasEffects { effectsSection }
 					if !isRoot { ConditionSection(model: model, node: node) }
 					codeSection
 				}
@@ -145,6 +136,13 @@ struct NodeInspector: View {
 					help: kind == .button && props.buttonDisplay == .icon
 						? "Title (read by VoiceOver for an icon-only button)" : nil)
 			}
+			if kind.hasDetail {
+				PanelTextField(
+					placeholder: kind == .labeledContent ? "Value" : "Description",
+					text: bind(\.detail), multiline: kind == .unavailable,
+					help: kind == .labeledContent
+						? "The value shown beside the title" : "A line of text under the title")
+			}
 			if kind.hasPlaceholder {
 				PanelTextField(
 					placeholder: "Placeholder", text: bind(\.placeholder),
@@ -233,6 +231,14 @@ struct NodeInspector: View {
 					help: "Show activity without a value (a spinner), for work of unknown length")
 				if !props.indeterminate {
 					PanelPercentField(label: .letter("Value"), value: bind(\.value))
+				}
+			}
+			if kind == .gauge {
+				PanelPercentField(label: .icon("gauge.with.dots.needle.33percent"), value: bind(\.value), help: "How full the gauge is")
+			}
+			if kind == .colorPicker {
+				PanelCaptioned("Starts as") {
+					PanelColorRow(color: bind(\.fill))
 				}
 			}
 			if kind == .picker { pickerOptions }
@@ -336,7 +342,7 @@ struct NodeInspector: View {
 						options: ButtonStyleOption.allCases.map { ($0, $0.title) },
 						help: "The button's style (.buttonStyle)")
 				} else {
-					PanelCaption("Glass style, set in Liquid Glass below.")
+					PanelCaption("Glass style, set in Effects → Glass.")
 				}
 			}
 			if kind == .toggle {
@@ -551,6 +557,7 @@ struct NodeInspector: View {
 					AnchorGrid(selection: bind(\.imageAnchor))
 				}
 			}
+			adjustmentsRow
 		}
 	}
 
@@ -558,6 +565,25 @@ struct NodeInspector: View {
 
 	private var symbolSection: some View {
 		PanelSection("Symbol") {
+			PanelCaptioned("Size", help: "The symbol's point size and weight (.font(.system(size:weight:)))") {
+				PanelGrid {
+					PanelNumberField(
+						label: .icon("arrow.up.left.and.arrow.down.right"), value: bind(\.fontSize),
+						range: 6...512, unit: "pt", help: "Point size")
+				} b: {
+					PanelMenu(
+						selection: bind(\.weight),
+						options: FontWeight.allCases.map { ($0, $0.rawValue.capitalized) },
+						help: "Weight (thin to black)")
+				}
+				PanelSegmented(
+					selection: Binding(
+						get: { Self.symbolSizes.contains(props.fontSize) ? props.fontSize : -1 },
+						set: { if $0 > 0 { bind(\.fontSize).wrappedValue = $0 } }),
+					items: Self.symbolSizes.map { size in
+						(size, PanelSegmentLabel(text: CodeGenerator.number(size), help: "\(CodeGenerator.number(size)) pt"))
+					})
+			}
 			PanelCaptioned("Rendering", help: "How the symbol uses color (.symbolRenderingMode)") {
 				PanelSegmented(
 					selection: bind(\.symbolRendering),
@@ -622,47 +648,34 @@ struct NodeInspector: View {
 
 	// MARK: Effects
 
-	private var adjustmentsSection: some View {
+	private var adjustmentsRow: some View {
 		let a = props.adjustments
-		return PanelSection("Adjustments") {
-			PanelGrid {
-				PanelNumberField(
-					label: .icon("circle.lefthalf.filled.righthalf.striped.horizontal"),
-					value: adjust(\.grayscale, scale: 100), range: 0...100, unit: "%",
-					help: "Grayscale")
-			} b: {
-				PanelNumberField(
-					label: .icon("drop"), value: adjust(\.saturation, scale: 100), range: 0...300,
-					unit: "%",
-					help: "Saturation (100% is unchanged)")
+		return PanelFlyoutRow(
+			icon: "camera.filters", title: "Adjustments",
+			summary: a.isIdentity ? "None" : "\(a.changedCount) changed",
+			help: "Grayscale, saturation, brightness, contrast and blur"
+		) {
+			FlyoutField("Grayscale", icon: "circle.lefthalf.filled.righthalf.striped.horizontal") {
+				PanelNumberField(label: .icon("arrow.left.and.right"), value: adjust(\.grayscale, scale: 100), range: 0...100, unit: "%")
 			}
-			PanelGrid {
-				PanelNumberField(
-					label: .icon("sun.max"), value: adjust(\.brightness, scale: 100),
-					range: -100...100, unit: "%",
-					help: "Brightness (0% is unchanged)")
-			} b: {
-				PanelNumberField(
-					label: .icon("circle.righthalf.filled"), value: adjust(\.contrast, scale: 100),
-					range: 0...300,
-					unit: "%", help: "Contrast (100% is unchanged)")
+			FlyoutField("Saturation", icon: "drop") {
+				PanelNumberField(label: .icon("arrow.left.and.right"), value: adjust(\.saturation, scale: 100), range: 0...300, unit: "%")
 			}
-			HStack {
-				PanelNumberField(
-					label: .icon("aqi.medium"), value: adjust(\.blur, scale: 1), range: 0...50,
-					unit: "pt", help: "Blur"
-				)
-				.frame(maxWidth: 120)
-				Spacer()
-				if !a.isIdentity {
-					PanelTextButton(
-						title: "Reset", symbol: "arrow.counterclockwise",
-						help: "Undo all adjustments"
-					) {
-						bind(\.adjustments).wrappedValue = ImageAdjustments()
-					}
-				}
+			FlyoutField("Brightness", icon: "sun.max") {
+				PanelNumberField(label: .icon("arrow.left.and.right"), value: adjust(\.brightness, scale: 100), range: -100...100, unit: "%")
 			}
+			FlyoutField("Contrast", icon: "circle.righthalf.filled") {
+				PanelNumberField(label: .icon("arrow.left.and.right"), value: adjust(\.contrast, scale: 100), range: 0...300, unit: "%")
+			}
+			FlyoutField("Blur", icon: "aqi.medium") {
+				PanelNumberField(label: .icon("arrow.left.and.right"), value: adjust(\.blur, scale: 1), range: 0...50, unit: "pt")
+			}
+			PanelTextButton(
+				title: "Reset", symbol: "arrow.counterclockwise", help: "Undo all adjustments"
+			) {
+				bind(\.adjustments).wrappedValue = ImageAdjustments()
+			}
+			.disabled(a.isIdentity)
 		}
 	}
 
@@ -680,45 +693,164 @@ struct NodeInspector: View {
 		)
 	}
 
-	@ViewBuilder
-	private var borderSection: some View {
-		if let border = props.border {
-			PanelSection("Border", onRemove: { bind(\.border).wrappedValue = nil }) {
-				PanelColorRow(color: optional(\.border, \.color, current: border))
-				PanelNumberField(
-					label: .icon("lineweight"), value: optional(\.border, \.width, current: border),
-					range: 0...50, unit: "pt", help: "Width"
-				)
-				.frame(maxWidth: 120)
+	// MARK: Colors and effects
+
+	private var showsForeground: Bool { kind.supportsForeground && kind != .image }
+
+	private var hasColors: Bool {
+		kind.isShape || (kind.usesAccent && props.accent != nil)
+			|| (showsForeground && props.foreground != nil)
+			|| (kind.supportsBackground && props.background != nil)
+	}
+
+	private var colorsSection: some View {
+		PanelSection("Colors") {
+			if kind.isShape {
+				colorRow("Fill", icon: "paintbrush.fill", color: bind(\.fill), onRemove: nil)
 			}
-		} else {
-			PanelSection("Border", onAdd: { bind(\.border).wrappedValue = BorderSettings() }) {
-				EmptyView()
+			if kind.usesAccent { optionalColorRow("Accent", icon: "switch.2", \.accent) }
+			// A symbol's color lives in its Symbol section.
+			if showsForeground { optionalColorRow("Foreground", icon: "character", \.foreground) }
+			if kind.supportsBackground {
+				optionalColorRow("Background", icon: "rectangle.fill", \.background)
 			}
 		}
 	}
 
+	private func colorRow(
+		_ title: String, icon: String, color: Binding<RGBA>, onRemove: (() -> Void)?
+	) -> some View {
+		HStack(spacing: 6) {
+			Image(systemName: icon)
+				.font(.system(size: 11))
+				.foregroundStyle(.secondary)
+				.frame(width: 16)
+				.help(PanelSection<EmptyView>.descriptions[title] ?? title)
+			PanelColorRow(color: color, onRemove: onRemove)
+		}
+	}
+
 	@ViewBuilder
-	private var shadowSection: some View {
-		if let shadow = props.shadow {
-			PanelSection("Shadow", onRemove: { bind(\.shadow).wrappedValue = nil }) {
-				PanelColorRow(color: optional(\.shadow, \.color, current: shadow))
-				HStack(spacing: 6) {
-					PanelNumberField(
-						label: .letter("X"), value: optional(\.shadow, \.x, current: shadow),
-						range: -200...200, help: "Horizontal offset")
-					PanelNumberField(
-						label: .letter("Y"), value: optional(\.shadow, \.y, current: shadow),
-						range: -200...200, help: "Vertical offset")
-					PanelNumberField(
-						label: .icon("aqi.medium"),
-						value: optional(\.shadow, \.radius, current: shadow), range: 0...200,
-						help: "Blur radius")
+	private func optionalColorRow(
+		_ title: String, icon: String, _ path: WritableKeyPath<Props, RGBA?>
+	) -> some View {
+		if let color = props[keyPath: path] {
+			colorRow(
+				title, icon: icon,
+				color: Binding(get: { color }, set: { bind(path).wrappedValue = $0 }),
+				onRemove: { bind(path).wrappedValue = nil })
+		}
+	}
+
+	private var hasEffects: Bool {
+		kind.supportsBorderAndShadow && (props.border != nil || props.shadow != nil)
+			|| kind.supportsGlass && props.glass != nil
+	}
+
+	private var effectsSection: some View {
+		PanelSection("Effects") {
+			if let border = props.border, kind.supportsBorderAndShadow {
+				PanelFlyoutRow(
+					icon: "square.dashed", title: "Border",
+					summary: "\(CodeGenerator.number(border.width)) pt", swatch: border.color,
+					onRemove: { bind(\.border).wrappedValue = nil }
+				) {
+					borderEditor(border)
 				}
 			}
-		} else {
-			PanelSection("Shadow", onAdd: { bind(\.shadow).wrappedValue = ShadowSettings() }) {
-				EmptyView()
+			if let shadow = props.shadow, kind.supportsBorderAndShadow {
+				PanelFlyoutRow(
+					icon: "shadow", title: "Shadow",
+					summary:
+						"blur \(CodeGenerator.number(shadow.radius)) · \(CodeGenerator.number(shadow.x)), \(CodeGenerator.number(shadow.y))",
+					swatch: shadow.color,
+					onRemove: { bind(\.shadow).wrappedValue = nil }
+				) {
+					shadowEditor(shadow)
+				}
+			}
+			if let glass = props.glass, kind.supportsGlass {
+				PanelFlyoutRow(
+					icon: "drop", title: "Glass",
+					summary: glassSummary(glass),
+					swatch: glass.resolved(model.project.theme).tint,
+					help: PanelSection<EmptyView>.descriptions["Liquid Glass"],
+					onRemove: { bind(\.glass).wrappedValue = nil }
+				) {
+					glassEditor(glass)
+				}
+			}
+		}
+	}
+
+	private func glassSummary(_ glass: GlassSettings) -> String {
+		let look = glass.followsTheme ? "Theme" : glass.variant == .clear ? "Clear" : "Regular"
+		return "\(look) · \(glass.shape.title)"
+	}
+
+	/// Optional colors, effects and a condition that aren't set yet, as one row of buttons.
+	private var addItems: [PanelAddBar.Item] {
+		var items: [PanelAddBar.Item] = []
+		func add(_ title: String, _ icon: String, _ action: @escaping () -> Void) {
+			items.append(PanelAddBar.Item(icon: icon, title: title, action: action))
+		}
+		if kind.usesAccent && props.accent == nil {
+			add("Accent", "switch.2") { bind(\.accent).wrappedValue = .blue }
+		}
+		if showsForeground && props.foreground == nil {
+			add("Foreground", "character") { bind(\.foreground).wrappedValue = .black }
+		}
+		if kind.supportsBackground && props.background == nil {
+			add("Background", "rectangle.fill") { bind(\.background).wrappedValue = .lightGray }
+		}
+		if kind.supportsBorderAndShadow && props.border == nil {
+			add("Border", "square.dashed") { bind(\.border).wrappedValue = BorderSettings() }
+		}
+		if kind.supportsBorderAndShadow && props.shadow == nil {
+			add("Shadow", "shadow") { bind(\.shadow).wrappedValue = ShadowSettings() }
+		}
+		if kind.supportsGlass && props.glass == nil {
+			add("Glass", "drop") { bind(\.glass).wrappedValue = GlassSettings() }
+		}
+		if !isRoot, model.condition(for: id) == nil,
+			let source = model.conditionSources(for: id).first
+		{
+			add("Condition", "questionmark.diamond") {
+				model.setCondition(model.defaultCondition(source: source), for: id)
+			}
+		}
+		return items
+	}
+
+	@ViewBuilder
+	private func borderEditor(_ border: BorderSettings) -> some View {
+		FlyoutField("Color", icon: "paintpalette") {
+			PanelColorRow(color: optional(\.border, \.color, current: border))
+		}
+		FlyoutField("Width", icon: "lineweight") {
+			PanelNumberField(
+				label: .icon("arrow.left.and.right"), value: optional(\.border, \.width, current: border), range: 0...50, unit: "pt")
+		}
+	}
+
+	@ViewBuilder
+	private func shadowEditor(_ shadow: ShadowSettings) -> some View {
+		FlyoutField("Color", icon: "paintpalette") {
+			PanelColorRow(color: optional(\.shadow, \.color, current: shadow))
+		}
+		FlyoutField("Blur", icon: "aqi.medium") {
+			PanelNumberField(
+				label: .icon("arrow.left.and.right"), value: optional(\.shadow, \.radius, current: shadow), range: 0...200, unit: "pt")
+		}
+		FlyoutField("Offset", icon: "arrow.down.right") {
+			PanelGrid {
+				PanelNumberField(
+					label: .letter("X"), value: optional(\.shadow, \.x, current: shadow),
+					range: -200...200, help: "Horizontal offset")
+			} b: {
+				PanelNumberField(
+					label: .letter("Y"), value: optional(\.shadow, \.y, current: shadow),
+					range: -200...200, help: "Vertical offset")
 			}
 		}
 	}
@@ -759,18 +891,15 @@ struct NodeInspector: View {
 					Color.clear.frame(height: PanelStyle.fieldHeight)
 				}
 			}
+			// A symbol's size is in its Symbol section.
+			if kind.usesFont && kind != .image { typography }
 		}
 	}
 
-	private var fillSection: some View {
-		PanelSection("Fill") {
-			PanelColorRow(color: bind(\.fill))
-		}
-	}
+	private static let symbolSizes: [Double] = [16, 24, 32, 48, 64, 96]
 
-	private var typographySection: some View {
-		PanelSection("Typography") {
-			PanelGrid {
+	private var typography: some View {
+		PanelGrid {
 				PanelNumberField(
 					label: .icon("textformat.size"), value: bind(\.fontSize), range: 6...300,
 					help: "Font size")
@@ -780,81 +909,61 @@ struct NodeInspector: View {
 					options: FontWeight.allCases.map { ($0, $0.rawValue.capitalized) },
 					help: "Font weight")
 			}
-		}
-	}
-
-	/// An optional color: just a header with + until it's added.
-	@ViewBuilder
-	private func colorSection(
-		_ title: String, _ path: WritableKeyPath<Props, RGBA?>, fallback: RGBA
-	) -> some View {
-		if props[keyPath: path] == nil {
-			PanelSection(title, onAdd: { bind(path).wrappedValue = fallback }) { EmptyView() }
-		} else {
-			PanelSection(title, onRemove: { bind(path).wrappedValue = nil }) {
-				PanelColorRow(
-					color: Binding(
-						get: { props[keyPath: path] ?? fallback },
-						set: { bind(path).wrappedValue = $0 }))
-			}
-		}
 	}
 
 	// MARK: Glass
 
 	@ViewBuilder
-	private var glassSection: some View {
-		if let glass = props.glass {
-			PanelSection("Liquid Glass", onRemove: { bind(\.glass).wrappedValue = nil }) {
-				PanelCheckbox(
-					title: "Follow project theme", isOn: glassBinding(\.followsTheme, glass),
-					help:
-						"Use the project's glass variant, tint and interactivity (set with nothing selected)"
-				)
-				PanelGrid {
-					if glass.followsTheme {
-						PanelCaption(model.project.theme.glass.summary)
-					} else {
-						PanelSegmented(
-							selection: glassBinding(\.variant, glass),
-							items: [(.regular, .text("Regular")), (.clear, .text("Clear"))])
-					}
-				} b: {
-					PanelSegmented(
-						selection: glassBinding(\.shape, glass),
-						items: [
-							(
-								.roundedRect,
-								.icon("rectangle", "Rounded rectangle (uses corner radius)")
-							),
-							(.capsule, .icon("capsule", "Capsule")),
-							(.circle, .icon("circle", "Circle")),
-						])
-				}
-				if glass.followsTheme {
-				} else if let tint = glass.tint {
+	private func glassEditor(_ glass: GlassSettings) -> some View {
+		// "Theme" follows the project theme; Regular and Clear are this component's own look.
+		FlyoutField("Look", icon: "drop") {
+			PanelSegmented(
+				selection: Binding(
+					get: { glass.followsTheme ? nil : glass.variant },
+					set: { look in
+						model.updateProps(id, key: \Props.glass) {
+							$0.glass?.followsTheme = look == nil
+							if let look { $0.glass?.variant = look }
+						}
+					}),
+				items: [
+					(nil, PanelSegmentLabel(text: "Theme", help: "The project theme's glass (Theme tab)")),
+					(.regular, PanelSegmentLabel(text: "Regular", help: "Regular glass")),
+					(.clear, PanelSegmentLabel(text: "Clear", help: "Clear glass")),
+				])
+		}
+		FlyoutField("Shape", icon: "square.on.circle") {
+			PanelSegmented(
+				selection: glassBinding(\.shape, glass),
+				items: [
+					(.roundedRect, .icon("rectangle", "Rounded rectangle (uses corner radius)")),
+					(.capsule, .icon("capsule", "Capsule")),
+					(.circle, .icon("circle", "Circle")),
+				])
+		}
+		if glass.followsTheme {
+			PanelCaption("Theme glass: \(model.project.theme.glass.summary).")
+		} else {
+			FlyoutField("Tint", icon: "eyedropper") {
+				if let tint = glass.tint {
 					PanelColorRow(
 						color: Binding(
 							get: { tint }, set: { glassBinding(\.tint, glass).wrappedValue = $0 }),
 						onRemove: { glassBinding(\.tint, glass).wrappedValue = nil })
 				} else {
 					PanelTextButton(title: "Add tint", symbol: "plus", help: "Color the glass") {
-						glassBinding(\.tint, glass).wrappedValue = RGBA(
-							r: 0.2, g: 0.5, b: 1, a: 0.6)
+						glassBinding(\.tint, glass).wrappedValue = RGBA(r: 0.2, g: 0.5, b: 1, a: 0.6)
 					}
 				}
-				if kind == .button {
-					PanelCaption("Uses the glass button style; the shape sets its border.")
-				} else if !glass.followsTheme {
-					PanelCheckbox(
-						title: "Interactive", isOn: glassBinding(\.interactive, glass),
-						help: "Reacts to touch and pointer, like system glass controls")
-				}
 			}
-		} else {
-			PanelSection("Liquid Glass", onAdd: { bind(\.glass).wrappedValue = GlassSettings() }) {
-				EmptyView()
+			if kind != .button {
+				PanelCheckbox(
+					title: "Interactive", isOn: glassBinding(\.interactive, glass),
+					help: "Reacts to touch and pointer, like system glass controls")
 			}
+		}
+		if kind == .button {
+			PanelCaption("Buttons use the glass button style; the shape sets their border.")
 		}
 	}
 

@@ -47,7 +47,12 @@ final class DesignModel {
 	var liveValues: [UUID: ConditionValue] = [:]
 	/// The component being edited directly in its window after a double-click: inline text,
 	/// the symbol browser, or shape handles, depending on its kind.
-	var inPlaceEdit: UUID?
+	var inPlaceEdit: UUID? {
+		didSet { if inPlaceEdit != oldValue { symbolBrowserOpen = false } }
+	}
+	/// A lone symbol opens its symbol browser on a click after the double-click that started
+	/// editing it (which shows its size handles first).
+	var symbolBrowserOpen = false
 	var fileURL: URL?
 
 	@ObservationIgnored weak var windowManager: WindowManager?

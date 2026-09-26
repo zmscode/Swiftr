@@ -34,6 +34,20 @@ struct Node: Identifiable, Codable, Equatable {
 		case .progress:
 			p.value = 0.4
 			p.width = 160
+		case .gauge:
+			p.text = "Storage"
+			p.value = 0.6
+			p.width = 160
+		case .colorPicker:
+			p.text = "Color"
+			p.fill = .blue
+		case .labeledContent:
+			p.text = "Version"
+			p.detail = "1.0"
+		case .unavailable:
+			p.text = "No Items"
+			p.systemImage = "tray"
+			p.detail = "Items you add will appear here."
 		case .image:
 			p.systemImage = "star.fill"
 			p.fontSize = 32
@@ -65,6 +79,9 @@ struct Node: Identifiable, Codable, Equatable {
 			p.text = "Details"
 			p.isOn = true
 		case .form: p.fillWidth = true
+		case .list:
+			p.fillWidth = true
+			p.height = 160
 		case .menu:
 			p.text = "Options"
 			p.systemImage = "ellipsis.circle"
@@ -101,6 +118,8 @@ struct Node: Identifiable, Codable, Equatable {
 			children = [Node.titled(.toggle, "Enabled"), Node.make(.textField)]
 		case .disclosureGroup:
 			children = [Node.titled(.text, "More information goes here.")]
+		case .list:
+			children = ["Apples", "Oranges", "Pears"].map { Node.titled(.text, $0) }
 		case .tabView:
 			children = [Node.tab("Home", "house"), Node.tab("Settings", "gearshape")]
 		case .tab:
@@ -232,7 +251,8 @@ struct Node: Identifiable, Codable, Equatable {
 	var summary: String {
 		switch kind {
 		case .text, .label, .button, .link, .toggle, .stepper, .picker, .datePicker, .groupBox,
-			.menu, .section, .disclosureGroup, .tab, .pane, .navigationLink:
+			.menu, .section, .disclosureGroup, .tab, .pane, .navigationLink, .gauge, .colorPicker,
+			.labeledContent, .unavailable:
 			props.text.isEmpty ? kind.displayName : "\(kind.displayName) “\(props.text)”"
 		case .image: "Symbol \(props.systemImage)"
 		default: kind.displayName

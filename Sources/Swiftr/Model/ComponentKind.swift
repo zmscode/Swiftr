@@ -3,10 +3,11 @@ import SwiftUI
 enum ComponentKind: String, Codable, CaseIterable, Identifiable {
 	case text, label, button, link
 	case textField, secureField, textEditor
-	case toggle, slider, stepper, picker, datePicker, progress
+	case toggle, slider, stepper, picker, datePicker, progress, gauge, colorPicker
+	case labeledContent, unavailable
 	case image, rectangle, circle, capsule, ellipse, divider
 	case vstack, hstack, zstack, scrollView, groupBox, spacer
-	case controlGroup, menu, form, section, disclosureGroup
+	case controlGroup, menu, form, section, disclosureGroup, list
 	case photo
 	case tabView, tab, splitView, pane, navigationStack, navigationLink
 
@@ -27,6 +28,11 @@ enum ComponentKind: String, Codable, CaseIterable, Identifiable {
 		case .picker: "Picker"
 		case .datePicker: "Date Picker"
 		case .progress: "Progress"
+		case .gauge: "Gauge"
+		case .colorPicker: "Color Picker"
+		case .labeledContent: "Labeled Value"
+		case .unavailable: "Empty State"
+		case .list: "List"
 		case .image: "Symbol"
 		case .rectangle: "Rectangle"
 		case .circle: "Circle"
@@ -69,6 +75,11 @@ enum ComponentKind: String, Codable, CaseIterable, Identifiable {
 		case .picker: "filemenu.and.selection"
 		case .datePicker: "calendar"
 		case .progress: "progress.indicator"
+		case .gauge: "gauge.with.dots.needle.33percent"
+		case .colorPicker: "eyedropper.halffull"
+		case .labeledContent: "list.bullet.below.rectangle"
+		case .unavailable: "tray"
+		case .list: "list.bullet"
 		case .image: "star.square"
 		case .rectangle: "rectangle.fill"
 		case .circle: "circle.fill"
@@ -100,7 +111,7 @@ enum ComponentKind: String, Codable, CaseIterable, Identifiable {
 		[
 			.vstack, .hstack, .zstack, .scrollView, .groupBox, .controlGroup, .menu, .form,
 			.section, .disclosureGroup, .tabView, .tab, .splitView, .pane, .navigationStack,
-			.navigationLink,
+			.navigationLink, .list,
 		]
 		.contains(self)
 	}
@@ -119,36 +130,41 @@ enum ComponentKind: String, Codable, CaseIterable, Identifiable {
 
 	/// Containers offered by "Group In", in menu order.
 	static let wrappers: [ComponentKind] = [
-		.vstack, .hstack, .zstack, .scrollView, .controlGroup, .menu, .form, .section,
+		.vstack, .hstack, .zstack, .scrollView, .controlGroup, .menu, .form, .list, .section,
 		.disclosureGroup, .groupBox,
 	]
 
 	/// Groups whose children lay out top to bottom (as opposed to side by side or overlapping).
 	var stacksVertically: Bool {
-		[.vstack, .groupBox, .form, .section, .disclosureGroup, .menu].contains(self)
+		[.vstack, .groupBox, .form, .list, .section, .disclosureGroup, .menu].contains(self)
 	}
 	var isStack: Bool { self == .vstack || self == .hstack }
 	var isShape: Bool { [.rectangle, .circle, .capsule, .ellipse].contains(self) }
 	var usesFont: Bool {
 		[
 			.text, .label, .button, .link, .textField, .secureField, .textEditor, .toggle,
-			.stepper, .picker, .datePicker, .image,
+			.stepper, .picker, .datePicker, .image, .colorPicker, .labeledContent,
 		].contains(self)
 	}
 	var hasTitle: Bool {
 		[
 			.text, .label, .button, .link, .toggle, .stepper, .picker, .datePicker, .groupBox,
-			.menu, .section, .disclosureGroup, .tab, .pane, .navigationLink,
+			.menu, .section, .disclosureGroup, .tab, .pane, .navigationLink, .gauge,
+			.colorPicker, .labeledContent, .unavailable,
 		].contains(self)
 	}
+	/// A second line of text: a labeled value's value, or an empty state's description.
+	var hasDetail: Bool { self == .labeledContent || self == .unavailable }
 	var hasPlaceholder: Bool { self == .textField || self == .secureField }
-	var usesSymbol: Bool { self == .image || self == .label || self == .menu || self == .tab }
+	var usesSymbol: Bool {
+		[.image, .label, .menu, .tab, .unavailable].contains(self)
+	}
 	/// Components whose look follows the accent color (`.tint`).
 	var usesAccent: Bool {
 		[
 			.button, .link, .toggle, .slider, .stepper, .picker, .datePicker, .progress, .textField,
 			.secureField, .textEditor, .controlGroup, .menu, .tabView, .navigationLink,
-			.disclosureGroup,
+			.disclosureGroup, .gauge,
 		].contains(self)
 	}
 
@@ -166,11 +182,12 @@ enum ComponentKind: String, Codable, CaseIterable, Identifiable {
 	var family: Family {
 		switch self {
 		case .text, .label, .button, .link, .textField, .secureField, .textEditor,
-			.toggle, .slider, .stepper, .picker, .datePicker, .progress:
+			.toggle, .slider, .stepper, .picker, .datePicker, .progress, .gauge, .colorPicker,
+			.labeledContent, .unavailable:
 			.control
 		case .image, .photo, .rectangle, .circle, .capsule, .ellipse, .divider: .shape
 		case .vstack, .hstack, .zstack, .scrollView, .spacer: .layout
-		case .controlGroup, .menu, .form, .section, .groupBox, .disclosureGroup: .group
+		case .controlGroup, .menu, .form, .list, .section, .groupBox, .disclosureGroup: .group
 		case .tabView, .tab, .splitView, .pane, .navigationStack, .navigationLink: .navigation
 		}
 	}
@@ -190,12 +207,18 @@ enum ComponentKind: String, Codable, CaseIterable, Identifiable {
 	}
 
 	static let groups: [(title: String, kinds: [ComponentKind])] = [
-		("Text", [.text, .label, .link]),
-		("Controls", [.button, .toggle, .slider, .stepper, .picker, .datePicker, .progress]),
+		("Text", [.text, .label, .link, .labeledContent, .unavailable]),
+		(
+			"Controls",
+			[
+				.button, .toggle, .slider, .stepper, .picker, .datePicker, .colorPicker, .progress,
+				.gauge,
+			]
+		),
 		("Input", [.textField, .secureField, .textEditor]),
 		("Shapes & Media", [.photo, .image, .rectangle, .circle, .capsule, .ellipse, .divider]),
 		("Layout", [.vstack, .hstack, .zstack, .scrollView, .spacer]),
-		("Groups", [.controlGroup, .menu, .form, .section, .disclosureGroup, .groupBox]),
+		("Groups", [.controlGroup, .menu, .form, .list, .section, .disclosureGroup, .groupBox]),
 		("Navigation", [.tabView, .tab, .splitView, .navigationStack, .navigationLink]),
 	]
 }

@@ -210,6 +210,15 @@ struct ImageAdjustments: Codable, Equatable {
 	var blur = 0.0
 
 	var isIdentity: Bool { self == ImageAdjustments() }
+
+	/// How many of the adjustments differ from unchanged.
+	var changedCount: Int {
+		let d = ImageAdjustments()
+		return [
+			grayscale != d.grayscale, saturation != d.saturation, brightness != d.brightness,
+			contrast != d.contrast, blur != d.blur,
+		].filter { $0 }.count
+	}
 }
 
 /// How an SF Symbol uses color.

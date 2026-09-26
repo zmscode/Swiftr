@@ -66,6 +66,14 @@ extension ComponentKind {
 				StyleVariant(
 					id: "graphical", title: "Calendar", code: ".datePickerStyle(.graphical)"),
 			]
+		case .gauge:
+			[
+				// On macOS the default gauge is a ring.
+				StyleVariant(id: "automatic", title: "Ring", code: nil),
+				StyleVariant(id: "linear", title: "Bar", code: ".gaugeStyle(.linearCapacity)"),
+				StyleVariant(
+					id: "circularNeedle", title: "Dial", code: ".gaugeStyle(.accessoryCircular)"),
+			]
 		case .progress:
 			[
 				StyleVariant(id: "automatic", title: "Automatic", code: nil),
@@ -134,6 +142,8 @@ struct VariantModifier: ViewModifier {
 		case (.datePicker, "field"): content.datePickerStyle(.field)
 		case (.datePicker, "stepperField"): content.datePickerStyle(.stepperField)
 		case (.datePicker, "graphical"): content.datePickerStyle(.graphical)
+		case (.gauge, "linear"): content.gaugeStyle(.linearCapacity)
+		case (.gauge, "circularNeedle"): content.gaugeStyle(.accessoryCircular)
 		case (.progress, "linear"): content.progressViewStyle(.linear)
 		case (.progress, "circular"): content.progressViewStyle(.circular)
 		case (.label, "titleAndIcon"): content.labelStyle(.titleAndIcon)

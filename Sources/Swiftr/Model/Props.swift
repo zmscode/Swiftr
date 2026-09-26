@@ -3,6 +3,8 @@ import SwiftUI
 struct Props: Codable, Equatable {
 	var text = ""
 	var placeholder = ""
+	/// A labeled value's value, or an empty state's description.
+	var detail = ""
 	var systemImage = "star.fill"
 	var isOn = false
 	var value = 0.5
@@ -103,6 +105,7 @@ extension Props {
 		self.init()
 		text = v(.text, d.text)
 		placeholder = v(.placeholder, d.placeholder)
+		detail = v(.detail, d.detail)
 		systemImage = v(.systemImage, d.systemImage)
 		isOn = v(.isOn, d.isOn)
 		value = v(.value, d.value)

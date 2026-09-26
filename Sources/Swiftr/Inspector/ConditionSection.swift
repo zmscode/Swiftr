@@ -33,15 +33,8 @@ struct ConditionSection: View {
 						for: model.project.windowIndex(containing: node.id).map { model.project.windows[$0].id })
 				}
 			}
-		} else if let first = sources.first {
-			PanelSection("Condition", onAdd: { model.setCondition(model.defaultCondition(source: first), for: node.id) }) {
-				EmptyView()
-			}
-		} else {
-			PanelSection("Condition", collapsedByDefault: true) {
-				PanelCaption("Add a toggle, slider, stepper, picker or text field to this window to show this only when it's set.")
-			}
 		}
+		// Without a condition, the inspector's Add row offers one.
 	}
 
 	@ViewBuilder

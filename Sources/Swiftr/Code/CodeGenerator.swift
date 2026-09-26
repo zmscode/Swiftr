@@ -314,6 +314,17 @@ struct CodeGenerator {
 		case .progress:
 			head =
 				p.indeterminate ? "ProgressView()" : "ProgressView(value: \(Self.number(p.value)))"
+		case .gauge:
+			head =
+				"Gauge(value: \(Self.number(p.value))) {\n\(pad)    Text(\(Self.literal(p.text)))\n\(pad)}"
+		case .colorPicker:
+			let name = newState(node, "color", type: "Color", initial: Self.color(p.fill))
+			head = "ColorPicker(\(Self.literal(p.text)), selection: $\(name))"
+		case .labeledContent:
+			head = "LabeledContent(\(Self.literal(p.text)), value: \(Self.literal(p.detail)))"
+		case .unavailable:
+			head =
+				"ContentUnavailableView(\(Self.literal(p.text)), systemImage: \(Self.literal(p.systemImage)), description: Text(\(Self.literal(p.detail))))"
 		case .image:
 			head = "Image(systemName: \(Self.literal(p.systemImage)))"
 			if p.symbolRendering != .monochrome {
@@ -376,6 +387,8 @@ struct CodeGenerator {
 				+ " label: {\n\(pad)    Label(\(Self.literal(p.text)), systemImage: \(Self.literal(p.systemImage)))\n\(pad)}"
 		case .form:
 			head = block("Form", node.children, level: level)
+		case .list:
+			head = block("List", node.children, level: level)
 		case .section:
 			head = block(
 				p.text.isEmpty ? "Section" : "Section(\(Self.literal(p.text)))", node.children,
