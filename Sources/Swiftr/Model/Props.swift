@@ -6,6 +6,10 @@ struct Props: Codable, Equatable {
 	var systemImage = "star.fill"
 	var isOn = false
 	var value = 0.5
+	/// A slider's range, and its step (nil slides smoothly).
+	var sliderMin = 0.0
+	var sliderMax = 1.0
+	var sliderStep: Double? = nil
 	var options = ["First", "Second", "Third"]
 	var selectedIndex = 0
 	var url = "https://www.apple.com"
@@ -60,6 +64,11 @@ struct Props: Codable, Equatable {
 	/// Wrap a stack's children in a `GlassEffectContainer` so their glass blends and morphs.
 	var glassContainer = false
 
+	/// The slider's range, always valid (min below max) even if edited into an odd state.
+	var sliderRange: ClosedRange<Double> {
+		sliderMin < sliderMax ? sliderMin...sliderMax : sliderMin...(sliderMin + 1)
+	}
+
 	func sizeMode(_ axis: Axis) -> SizeMode {
 		switch axis {
 		case .horizontal: width != nil ? .fixed : fillWidth ? .fill : .hug
@@ -93,6 +102,9 @@ extension Props {
 		systemImage = v(.systemImage, d.systemImage)
 		isOn = v(.isOn, d.isOn)
 		value = v(.value, d.value)
+		sliderMin = v(.sliderMin, d.sliderMin)
+		sliderMax = v(.sliderMax, d.sliderMax)
+		sliderStep = v(.sliderStep, d.sliderStep)
 		options = v(.options, d.options)
 		selectedIndex = v(.selectedIndex, d.selectedIndex)
 		url = v(.url, d.url)

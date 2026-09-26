@@ -15,6 +15,8 @@ struct ConditionCard: Equatable, Sendable {
 	var tint: ConditionTint
 	var inputs: [ConditionPort]
 	var output: ConditionValueType?
+	/// Shown on the card, e.g. a comparison that can never be true.
+	var warning: String? = nil
 }
 
 struct ConditionPort: Equatable, Sendable {
@@ -317,7 +319,8 @@ struct ConditionsPanel: View {
 				kind: node.kind, title: "Compare", subtitle: "", icon: "equal", tint: .compare,
 				inputs: op.isBinary
 					? [port("a", "Value"), port("b", "Compared with")] : [port("a", "Value")],
-				output: .bool)
+				output: .bool,
+				warning: model.neverTrueWarning(compareNode: node.id, in: window.conditions))
 		case .visible(let id):
 			let component = model.project.find(id)
 			return ConditionCard(

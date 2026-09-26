@@ -16,7 +16,7 @@ Or open `Package.swift` in Xcode and press Run.
 
 ## Examples
 
-`examples/` has four small projects: `Hello.json` (a greeting with a glass button), `SignIn.json` (a fixed-size login form), `Settings.json` (tabs of settings forms) and `Mail.json` (a split view, plus an About window opened by a button). Open one with `just r examples/Mail.json` or File → Open.
+`examples/` has five small projects: `Hello.json` (a greeting with a glass button), `SignIn.json` (a fixed-size login form), `Settings.json` (tabs of settings forms), `Mail.json` (a split view, plus an About window opened by a button) and `Conditions.json` (a toggle, slider and text field that show and hide other components; try it in Preview). Open one with `just r examples/Mail.json` or File → Open.
 
 ## Use
 

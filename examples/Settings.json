@@ -3,72 +3,7 @@
 	"images": [],
 	"windows": [
 		{
-			"conditions": {
-				"links": [
-					{
-						"from": "BCEFF303-FDF3-49C3-899A-FA538F825AFF",
-						"id": "C48A8D94-85CF-4D9B-8503-DFC24F5B6D83",
-						"port": "a",
-						"to": "047220E5-7AB2-4DAE-9340-79FD88E0433D"
-					},
-					{
-						"from": "99CF2AD9-15D1-4671-9AC0-B5AE5C717DCB",
-						"id": "D2557330-2296-4CFF-B07E-85280B9780A3",
-						"port": "b",
-						"to": "047220E5-7AB2-4DAE-9340-79FD88E0433D"
-					},
-					{
-						"from": "047220E5-7AB2-4DAE-9340-79FD88E0433D",
-						"id": "FDC2C84B-6FC5-4E3A-8E94-37D19AAFBA60",
-						"port": "in",
-						"to": "FBFFCBB9-0AD1-4C0F-B099-2BFF657FC4BD"
-					}
-				],
-				"nodes": [
-					{
-						"id": "BCEFF303-FDF3-49C3-899A-FA538F825AFF",
-						"kind": {
-							"control": {
-								"_0": "334DB35C-2DDF-4207-8D81-B063D7944555"
-							}
-						},
-						"position": [-26.20888157894737, -60.481085526315795]
-					},
-					{
-						"id": "FBFFCBB9-0AD1-4C0F-B099-2BFF657FC4BD",
-						"kind": {
-							"visible": {
-								"_0": "5AC2FD71-1A63-476F-8BC5-5E638DC66ED4"
-							}
-						},
-						"position": [543.0592105263157, 52.203947368421055]
-					},
-					{
-						"id": "047220E5-7AB2-4DAE-9340-79FD88E0433D",
-						"kind": {
-							"compare": {
-								"_0": "greater"
-							}
-						},
-						"position": [260, 0]
-					},
-					{
-						"id": "99CF2AD9-15D1-4671-9AC0-B5AE5C717DCB",
-						"kind": {
-							"constant": {
-								"_0": {
-									"number": {
-										"_0": 79
-									}
-								}
-							}
-						},
-						"position": [-25.008223684210527, 59.69161184210527]
-					}
-				]
-			},
 			"id": "D19CD18F-546F-4352-8FAF-4C396B3D8F93",
-			"position": [1264, 1582],
 			"root": {
 				"children": [
 					{
@@ -82,13 +17,6 @@
 												"id": "BC882F87-D748-4B19-BE56-D1901365BF89",
 												"kind": "toggle",
 												"props": {
-													"adjustments": {
-														"blur": 0,
-														"brightness": 0,
-														"contrast": 1,
-														"grayscale": 0,
-														"saturation": 1
-													},
 													"align": "center",
 													"buttonDisplay": "title",
 													"buttonStyle": "automatic",
@@ -107,7 +35,6 @@
 													"fontSize": 13,
 													"glassContainer": false,
 													"imageAnchor": "center",
-													"imageShape": "roundedRect",
 													"indeterminate": false,
 													"isOn": true,
 													"lockAspect": true,
@@ -132,13 +59,6 @@
 												"id": "DE682BC5-F81B-4656-A870-0A12A5E6798C",
 												"kind": "picker",
 												"props": {
-													"adjustments": {
-														"blur": 0,
-														"brightness": 0,
-														"contrast": 1,
-														"grayscale": 0,
-														"saturation": 1
-													},
 													"align": "center",
 													"buttonDisplay": "title",
 													"buttonStyle": "automatic",
@@ -157,7 +77,6 @@
 													"fontSize": 13,
 													"glassContainer": false,
 													"imageAnchor": "center",
-													"imageShape": "roundedRect",
 													"indeterminate": false,
 													"isOn": false,
 													"lockAspect": true,
@@ -182,13 +101,6 @@
 												"id": "334DB35C-2DDF-4207-8D81-B063D7944555",
 												"kind": "slider",
 												"props": {
-													"adjustments": {
-														"blur": 0,
-														"brightness": 0,
-														"contrast": 1,
-														"grayscale": 0,
-														"saturation": 1
-													},
 													"align": "center",
 													"buttonDisplay": "title",
 													"buttonStyle": "automatic",
@@ -207,7 +119,6 @@
 													"fontSize": 13,
 													"glassContainer": false,
 													"imageAnchor": "center",
-													"imageShape": "roundedRect",
 													"indeterminate": false,
 													"isOn": false,
 													"lockAspect": true,
@@ -223,57 +134,7 @@
 													"text": "",
 													"toggleStyle": "switch",
 													"url": "https:\/\/www.apple.com",
-													"value": 0.56,
-													"weight": "regular"
-												}
-											},
-											{
-												"children": [],
-												"id": "5AC2FD71-1A63-476F-8BC5-5E638DC66ED4",
-												"kind": "label",
-												"props": {
-													"adjustments": {
-														"blur": 0,
-														"brightness": 0,
-														"contrast": 1,
-														"grayscale": 0,
-														"saturation": 1
-													},
-													"align": "center",
-													"buttonDisplay": "title",
-													"buttonStyle": "automatic",
-													"contentMode": "fill",
-													"controlSize": "regular",
-													"cornerRadius": 0,
-													"dateComponents": "date",
-													"fill": {
-														"a": 1,
-														"b": 1,
-														"g": 0.48,
-														"r": 0
-													},
-													"fillHeight": false,
-													"fillWidth": false,
-													"fontSize": 13,
-													"glassContainer": false,
-													"imageAnchor": "center",
-													"imageShape": "roundedRect",
-													"indeterminate": false,
-													"isOn": false,
-													"lockAspect": true,
-													"opacity": 1,
-													"options": ["First", "Second", "Third"],
-													"padding": 0,
-													"pickerStyle": "menu",
-													"placeholder": "",
-													"scrollAxis": "vertical",
-													"selectedIndex": 0,
-													"spacing": 8,
-													"systemImage": "star.fill",
-													"text": "Favorites",
-													"toggleStyle": "switch",
-													"url": "https:\/\/www.apple.com",
-													"value": 0.5,
+													"value": 0.7,
 													"weight": "regular"
 												}
 											}
@@ -281,13 +142,6 @@
 										"id": "215A9667-EEA3-4049-8533-E6F9DFEBE375",
 										"kind": "form",
 										"props": {
-											"adjustments": {
-												"blur": 0,
-												"brightness": 0,
-												"contrast": 1,
-												"grayscale": 0,
-												"saturation": 1
-											},
 											"align": "center",
 											"buttonDisplay": "title",
 											"buttonStyle": "automatic",
@@ -306,7 +160,6 @@
 											"fontSize": 13,
 											"glassContainer": false,
 											"imageAnchor": "center",
-											"imageShape": "roundedRect",
 											"indeterminate": false,
 											"isOn": false,
 											"lockAspect": true,
@@ -330,13 +183,6 @@
 								"id": "280E7FE2-99CD-46E4-B527-F75BC152CEC6",
 								"kind": "tab",
 								"props": {
-									"adjustments": {
-										"blur": 0,
-										"brightness": 0,
-										"contrast": 1,
-										"grayscale": 0,
-										"saturation": 1
-									},
 									"align": "center",
 									"buttonDisplay": "title",
 									"buttonStyle": "automatic",
@@ -355,7 +201,6 @@
 									"fontSize": 13,
 									"glassContainer": false,
 									"imageAnchor": "center",
-									"imageShape": "roundedRect",
 									"indeterminate": false,
 									"isOn": false,
 									"lockAspect": true,
@@ -384,13 +229,6 @@
 												"id": "AC1A1915-4ED8-477A-8A13-AF78E3EAE364",
 												"kind": "picker",
 												"props": {
-													"adjustments": {
-														"blur": 0,
-														"brightness": 0,
-														"contrast": 1,
-														"grayscale": 0,
-														"saturation": 1
-													},
 													"align": "center",
 													"buttonDisplay": "title",
 													"buttonStyle": "automatic",
@@ -409,7 +247,6 @@
 													"fontSize": 13,
 													"glassContainer": false,
 													"imageAnchor": "center",
-													"imageShape": "roundedRect",
 													"indeterminate": false,
 													"isOn": false,
 													"lockAspect": true,
@@ -440,13 +277,6 @@
 														"g": 0.45,
 														"r": 0.95
 													},
-													"adjustments": {
-														"blur": 0,
-														"brightness": 0,
-														"contrast": 1,
-														"grayscale": 0,
-														"saturation": 1
-													},
 													"align": "center",
 													"buttonDisplay": "title",
 													"buttonStyle": "automatic",
@@ -465,7 +295,6 @@
 													"fontSize": 13,
 													"glassContainer": false,
 													"imageAnchor": "center",
-													"imageShape": "roundedRect",
 													"indeterminate": false,
 													"isOn": true,
 													"lockAspect": true,
@@ -489,13 +318,6 @@
 										"id": "E0927C38-0F2C-4301-951F-33FFDCA210DE",
 										"kind": "form",
 										"props": {
-											"adjustments": {
-												"blur": 0,
-												"brightness": 0,
-												"contrast": 1,
-												"grayscale": 0,
-												"saturation": 1
-											},
 											"align": "center",
 											"buttonDisplay": "title",
 											"buttonStyle": "automatic",
@@ -514,7 +336,6 @@
 											"fontSize": 13,
 											"glassContainer": false,
 											"imageAnchor": "center",
-											"imageShape": "roundedRect",
 											"indeterminate": false,
 											"isOn": false,
 											"lockAspect": true,
@@ -538,13 +359,6 @@
 								"id": "206942E9-73EC-41D3-A2A7-201EFB543BB6",
 								"kind": "tab",
 								"props": {
-									"adjustments": {
-										"blur": 0,
-										"brightness": 0,
-										"contrast": 1,
-										"grayscale": 0,
-										"saturation": 1
-									},
 									"align": "center",
 									"buttonDisplay": "title",
 									"buttonStyle": "automatic",
@@ -563,7 +377,6 @@
 									"fontSize": 13,
 									"glassContainer": false,
 									"imageAnchor": "center",
-									"imageShape": "roundedRect",
 									"indeterminate": false,
 									"isOn": false,
 									"lockAspect": true,
@@ -587,13 +400,6 @@
 						"id": "D8498597-2FCF-4601-83D8-32AC00B14D9B",
 						"kind": "tabView",
 						"props": {
-							"adjustments": {
-								"blur": 0,
-								"brightness": 0,
-								"contrast": 1,
-								"grayscale": 0,
-								"saturation": 1
-							},
 							"align": "center",
 							"buttonDisplay": "title",
 							"buttonStyle": "automatic",
@@ -612,7 +418,6 @@
 							"fontSize": 13,
 							"glassContainer": false,
 							"imageAnchor": "center",
-							"imageShape": "roundedRect",
 							"indeterminate": false,
 							"isOn": false,
 							"lockAspect": true,
@@ -636,13 +441,6 @@
 				"id": "1F5E7E38-64F6-4088-8AF1-A3E910A93FA1",
 				"kind": "vstack",
 				"props": {
-					"adjustments": {
-						"blur": 0,
-						"brightness": 0,
-						"contrast": 1,
-						"grayscale": 0,
-						"saturation": 1
-					},
 					"align": "center",
 					"buttonDisplay": "title",
 					"buttonStyle": "automatic",
@@ -661,7 +459,6 @@
 					"fontSize": 13,
 					"glassContainer": false,
 					"imageAnchor": "center",
-					"imageShape": "roundedRect",
 					"indeterminate": false,
 					"isOn": false,
 					"lockAspect": true,

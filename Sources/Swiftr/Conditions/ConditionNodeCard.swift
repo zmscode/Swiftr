@@ -42,6 +42,12 @@ struct ConditionNodeCard: View {
 						.padding(.leading, -16)
 					}
 				}
+				if let warning = card.warning {
+					Label(warning, systemImage: "exclamationmark.triangle.fill")
+						.font(.system(size: 9))
+						.foregroundStyle(.orange)
+						.fixedSize(horizontal: false, vertical: true)
+				}
 			}
 			.padding(.horizontal, 10)
 			.padding(.vertical, 8)

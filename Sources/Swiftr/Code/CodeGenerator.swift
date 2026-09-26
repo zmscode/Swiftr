@@ -235,7 +235,9 @@ struct CodeGenerator {
 			}
 		case .slider:
 			let name = newState(node, "value", type: "Double", initial: Self.number(p.value))
-			head = "Slider(value: $\(name), in: 0...1)"
+			let range = p.sliderRange
+			let step = p.sliderStep.map { $0 > 0 ? ", step: \(Self.number($0))" : "" } ?? ""
+			head = "Slider(value: $\(name), in: \(Self.number(range.lowerBound))...\(Self.number(range.upperBound))\(step))"
 		case .stepper:
 			let name = newState(node, "count", type: "Int", initial: String(Int(p.value)))
 			let title = String(Self.literal(p.text).dropLast()) + ": \\(\(name))\""

@@ -8,7 +8,5 @@ xcuserdata/
 # macOS
 .DS_Store
 
-# Personal notes and scratch projects
-tasks.md
-libraries.md
-Basic.json
+# Personal scratch projects
+private/*

@@ -13,6 +13,13 @@ struct ConditionSection: View {
 			PanelSection("Condition", onRemove: { model.removeCondition(for: node.id) }) {
 				if let simple = model.simpleCondition(for: node.id) {
 					editor(simple)
+					if let op = simple.op, let value = simple.value,
+						let warning = model.neverTrueWarning(control: simple.source, op: op, value: value)
+					{
+						Label(warning, systemImage: "exclamationmark.triangle.fill")
+							.font(PanelStyle.font)
+							.foregroundStyle(.orange)
+					}
 				} else {
 					PanelCaptioned("Visible when") {
 						Text(model.describe(condition)).font(PanelStyle.font)
@@ -71,7 +78,9 @@ struct ConditionSection: View {
 						PanelNumberField(
 							label: .letter("="),
 							value: valueBinding(condition, as: { .number($0) }, get: { $0?.number ?? 0 }),
-							range: -100_000...100_000, step: source.kind == .slider ? 0.01 : 1)
+							range: -100_000...100_000,
+							step: source.kind == .slider
+								? (source.props.sliderRange.upperBound - source.props.sliderRange.lowerBound) / 100 : 1)
 					}
 				}
 			case .text?:

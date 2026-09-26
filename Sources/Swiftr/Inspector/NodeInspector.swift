@@ -171,7 +171,26 @@ struct NodeInspector: View {
 				PanelCheckbox(title: "Initially expanded", isOn: bind(\.isOn))
 			}
 			if kind == .slider {
-				PanelPercentField(label: .letter("Value"), value: bind(\.value))
+				PanelCaptioned("Value") {
+					PanelNumberField(
+						label: .icon("slider.horizontal.below.rectangle"), value: bind(\.value),
+						range: props.sliderRange, step: (props.sliderRange.upperBound - props.sliderRange.lowerBound) / 100,
+						help: "Initial value")
+				}
+				PanelCaptioned("Range") {
+					PanelGrid {
+						PanelNumberField(label: .letter("Min"), value: bind(\.sliderMin), range: -1_000_000...1_000_000, help: "Minimum")
+					} b: {
+						PanelNumberField(label: .letter("Max"), value: bind(\.sliderMax), range: -1_000_000...1_000_000, help: "Maximum")
+					}
+				}
+				PanelCaptioned("Step (adds tick marks)") {
+					PanelNumberField(
+						label: .icon("stairs"),
+						value: Binding(get: { props.sliderStep ?? 0 }, set: { bind(\.sliderStep).wrappedValue = $0 > 0 ? $0 : nil }),
+						range: 0...1_000_000, help: "0 slides smoothly; a step snaps to it and shows a tick mark at each step")
+					.frame(maxWidth: 120)
+				}
 			}
 			if kind == .stepper {
 				PanelNumberField(

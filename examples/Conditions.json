@@ -1,0 +1,712 @@
+{
+  "appName" : "Conditions",
+  "images" : [
+
+  ],
+  "windows" : [
+    {
+      "conditions" : {
+        "links" : [
+          {
+            "from" : "DA66DD2D-482D-4A5A-82BC-7C3B963F883D",
+            "id" : "7BC7D92E-3C39-47D8-867B-14962102DCC1",
+            "port" : "in",
+            "to" : "B497C57F-8003-484D-8460-EFEDFE672398"
+          },
+          {
+            "from" : "8687CEFC-7440-4C46-BE19-EE1BBB684A68",
+            "id" : "8D2E7F3C-3CA2-473F-AA34-1E78876630F7",
+            "port" : "a",
+            "to" : "1E70E846-0F6F-4F00-9FE6-9576EC00FCAE"
+          },
+          {
+            "from" : "58934AE7-2F89-407C-896C-9A935B95BF76",
+            "id" : "EB7D798E-1BEA-4BDB-A2FC-09EC392C2962",
+            "port" : "b",
+            "to" : "1E70E846-0F6F-4F00-9FE6-9576EC00FCAE"
+          },
+          {
+            "from" : "1E70E846-0F6F-4F00-9FE6-9576EC00FCAE",
+            "id" : "44A75F27-F11A-4EF1-9123-3FDFBC04F193",
+            "port" : "in",
+            "to" : "21777104-3089-4E0E-91A2-96142257F780"
+          },
+          {
+            "from" : "19BA1446-F500-4561-832B-27E09A38EAE6",
+            "id" : "709D34B1-976B-45CC-8596-02E8A89ECAE2",
+            "port" : "a",
+            "to" : "8FA2731C-F37A-46FB-89DE-75B129917297"
+          },
+          {
+            "from" : "8FA2731C-F37A-46FB-89DE-75B129917297",
+            "id" : "DF714B1F-54F1-4037-9C06-58D6ADB5699F",
+            "port" : "in",
+            "to" : "3D7AE125-A332-438E-8EAA-8E0B6C11524A"
+          }
+        ],
+        "nodes" : [
+          {
+            "id" : "DA66DD2D-482D-4A5A-82BC-7C3B963F883D",
+            "kind" : {
+              "control" : {
+                "_0" : "5327AFEC-12EF-458B-9C45-0A0E49FB1CF4"
+              }
+            },
+            "position" : [
+              0,
+              0
+            ]
+          },
+          {
+            "id" : "B497C57F-8003-484D-8460-EFEDFE672398",
+            "kind" : {
+              "visible" : {
+                "_0" : "EAE05886-1ACA-4428-813D-5D79063BAF6B"
+              }
+            },
+            "position" : [
+              560,
+              0
+            ]
+          },
+          {
+            "id" : "8687CEFC-7440-4C46-BE19-EE1BBB684A68",
+            "kind" : {
+              "control" : {
+                "_0" : "615A492A-8B45-483F-925D-93487432DEAC"
+              }
+            },
+            "position" : [
+              0,
+              160
+            ]
+          },
+          {
+            "id" : "58934AE7-2F89-407C-896C-9A935B95BF76",
+            "kind" : {
+              "constant" : {
+                "_0" : {
+                  "number" : {
+                    "_0" : 79
+                  }
+                }
+              }
+            },
+            "position" : [
+              0,
+              270
+            ]
+          },
+          {
+            "id" : "1E70E846-0F6F-4F00-9FE6-9576EC00FCAE",
+            "kind" : {
+              "compare" : {
+                "_0" : "greater"
+              }
+            },
+            "position" : [
+              280,
+              180
+            ]
+          },
+          {
+            "id" : "21777104-3089-4E0E-91A2-96142257F780",
+            "kind" : {
+              "visible" : {
+                "_0" : "ADF2E210-8981-4ED4-8834-18B60AD7FBB1"
+              }
+            },
+            "position" : [
+              560,
+              180
+            ]
+          },
+          {
+            "id" : "19BA1446-F500-4561-832B-27E09A38EAE6",
+            "kind" : {
+              "control" : {
+                "_0" : "590D80E7-45C2-48D1-ADA8-66243A2AC87A"
+              }
+            },
+            "position" : [
+              0,
+              400
+            ]
+          },
+          {
+            "id" : "8FA2731C-F37A-46FB-89DE-75B129917297",
+            "kind" : {
+              "compare" : {
+                "_0" : "isNotEmpty"
+              }
+            },
+            "position" : [
+              280,
+              400
+            ]
+          },
+          {
+            "id" : "3D7AE125-A332-438E-8EAA-8E0B6C11524A",
+            "kind" : {
+              "visible" : {
+                "_0" : "0ED37F38-A13B-4D80-B99F-AE74C7BB5B1E"
+              }
+            },
+            "position" : [
+              560,
+              400
+            ]
+          }
+        ]
+      },
+      "id" : "8ED3824C-3E67-480F-9744-6F82B76B322A",
+      "root" : {
+        "children" : [
+          {
+            "children" : [
+
+            ],
+            "id" : "F3C2BCAB-8B11-439D-ADD8-BF937EEA9CD7",
+            "kind" : "text",
+            "props" : {
+              "adjustments" : {
+                "blur" : 0,
+                "brightness" : 0,
+                "contrast" : 1,
+                "grayscale" : 0,
+                "saturation" : 1
+              },
+              "align" : "center",
+              "buttonDisplay" : "title",
+              "buttonStyle" : "automatic",
+              "contentMode" : "fill",
+              "controlSize" : "regular",
+              "cornerRadius" : 0,
+              "dateComponents" : "date",
+              "fill" : {
+                "a" : 1,
+                "b" : 1,
+                "g" : 0.48,
+                "r" : 0
+              },
+              "fillHeight" : false,
+              "fillWidth" : false,
+              "fontSize" : 22,
+              "glassContainer" : false,
+              "imageAnchor" : "center",
+              "imageShape" : "roundedRect",
+              "indeterminate" : false,
+              "isOn" : false,
+              "lockAspect" : true,
+              "opacity" : 1,
+              "options" : [
+                "First",
+                "Second",
+                "Third"
+              ],
+              "padding" : 0,
+              "pickerStyle" : "menu",
+              "placeholder" : "",
+              "scrollAxis" : "vertical",
+              "selectedIndex" : 0,
+              "sliderMax" : 1,
+              "sliderMin" : 0,
+              "spacing" : 8,
+              "systemImage" : "star.fill",
+              "text" : "Conditions",
+              "toggleStyle" : "switch",
+              "url" : "https:\/\/www.apple.com",
+              "value" : 0.5,
+              "weight" : "bold"
+            }
+          },
+          {
+            "children" : [
+
+            ],
+            "id" : "EE1D5F04-A87D-4529-A6C5-B1CC05C7B4F0",
+            "kind" : "text",
+            "props" : {
+              "adjustments" : {
+                "blur" : 0,
+                "brightness" : 0,
+                "contrast" : 1,
+                "grayscale" : 0,
+                "saturation" : 1
+              },
+              "align" : "center",
+              "buttonDisplay" : "title",
+              "buttonStyle" : "automatic",
+              "contentMode" : "fill",
+              "controlSize" : "regular",
+              "cornerRadius" : 0,
+              "dateComponents" : "date",
+              "fill" : {
+                "a" : 1,
+                "b" : 1,
+                "g" : 0.48,
+                "r" : 0
+              },
+              "fillHeight" : false,
+              "fillWidth" : false,
+              "fontSize" : 13,
+              "foreground" : {
+                "a" : 1,
+                "b" : 0.55,
+                "g" : 0.5,
+                "r" : 0.5
+              },
+              "glassContainer" : false,
+              "imageAnchor" : "center",
+              "imageShape" : "roundedRect",
+              "indeterminate" : false,
+              "isOn" : false,
+              "lockAspect" : true,
+              "opacity" : 1,
+              "options" : [
+                "First",
+                "Second",
+                "Third"
+              ],
+              "padding" : 0,
+              "pickerStyle" : "menu",
+              "placeholder" : "",
+              "scrollAxis" : "vertical",
+              "selectedIndex" : 0,
+              "sliderMax" : 1,
+              "sliderMin" : 0,
+              "spacing" : 8,
+              "systemImage" : "star.fill",
+              "text" : "Press ⌘R to preview, then use the controls.",
+              "toggleStyle" : "switch",
+              "url" : "https:\/\/www.apple.com",
+              "value" : 0.5,
+              "weight" : "regular"
+            }
+          },
+          {
+            "children" : [
+
+            ],
+            "id" : "5327AFEC-12EF-458B-9C45-0A0E49FB1CF4",
+            "kind" : "toggle",
+            "props" : {
+              "adjustments" : {
+                "blur" : 0,
+                "brightness" : 0,
+                "contrast" : 1,
+                "grayscale" : 0,
+                "saturation" : 1
+              },
+              "align" : "center",
+              "buttonDisplay" : "title",
+              "buttonStyle" : "automatic",
+              "contentMode" : "fill",
+              "controlSize" : "regular",
+              "cornerRadius" : 0,
+              "dateComponents" : "date",
+              "fill" : {
+                "a" : 1,
+                "b" : 1,
+                "g" : 0.48,
+                "r" : 0
+              },
+              "fillHeight" : false,
+              "fillWidth" : false,
+              "fontSize" : 13,
+              "glassContainer" : false,
+              "imageAnchor" : "center",
+              "imageShape" : "roundedRect",
+              "indeterminate" : false,
+              "isOn" : false,
+              "lockAspect" : true,
+              "opacity" : 1,
+              "options" : [
+                "First",
+                "Second",
+                "Third"
+              ],
+              "padding" : 0,
+              "pickerStyle" : "menu",
+              "placeholder" : "",
+              "scrollAxis" : "vertical",
+              "selectedIndex" : 0,
+              "sliderMax" : 1,
+              "sliderMin" : 0,
+              "spacing" : 8,
+              "systemImage" : "star.fill",
+              "text" : "Show details",
+              "toggleStyle" : "switch",
+              "url" : "https:\/\/www.apple.com",
+              "value" : 0.5,
+              "weight" : "regular"
+            }
+          },
+          {
+            "children" : [
+
+            ],
+            "id" : "EAE05886-1ACA-4428-813D-5D79063BAF6B",
+            "kind" : "text",
+            "name" : "Details",
+            "props" : {
+              "adjustments" : {
+                "blur" : 0,
+                "brightness" : 0,
+                "contrast" : 1,
+                "grayscale" : 0,
+                "saturation" : 1
+              },
+              "align" : "center",
+              "buttonDisplay" : "title",
+              "buttonStyle" : "automatic",
+              "contentMode" : "fill",
+              "controlSize" : "regular",
+              "cornerRadius" : 0,
+              "dateComponents" : "date",
+              "fill" : {
+                "a" : 1,
+                "b" : 1,
+                "g" : 0.48,
+                "r" : 0
+              },
+              "fillHeight" : false,
+              "fillWidth" : false,
+              "fontSize" : 13,
+              "glassContainer" : false,
+              "imageAnchor" : "center",
+              "imageShape" : "roundedRect",
+              "indeterminate" : false,
+              "isOn" : false,
+              "lockAspect" : true,
+              "opacity" : 1,
+              "options" : [
+                "First",
+                "Second",
+                "Third"
+              ],
+              "padding" : 0,
+              "pickerStyle" : "menu",
+              "placeholder" : "",
+              "scrollAxis" : "vertical",
+              "selectedIndex" : 0,
+              "sliderMax" : 1,
+              "sliderMin" : 0,
+              "spacing" : 8,
+              "systemImage" : "star.fill",
+              "text" : "Here are the details, shown because the toggle is on.",
+              "toggleStyle" : "switch",
+              "url" : "https:\/\/www.apple.com",
+              "value" : 0.5,
+              "weight" : "regular"
+            }
+          },
+          {
+            "children" : [
+
+            ],
+            "id" : "615A492A-8B45-483F-925D-93487432DEAC",
+            "kind" : "slider",
+            "name" : "Volume",
+            "props" : {
+              "adjustments" : {
+                "blur" : 0,
+                "brightness" : 0,
+                "contrast" : 1,
+                "grayscale" : 0,
+                "saturation" : 1
+              },
+              "align" : "center",
+              "buttonDisplay" : "title",
+              "buttonStyle" : "automatic",
+              "contentMode" : "fill",
+              "controlSize" : "regular",
+              "cornerRadius" : 0,
+              "dateComponents" : "date",
+              "fill" : {
+                "a" : 1,
+                "b" : 1,
+                "g" : 0.48,
+                "r" : 0
+              },
+              "fillHeight" : false,
+              "fillWidth" : false,
+              "fontSize" : 13,
+              "glassContainer" : false,
+              "imageAnchor" : "center",
+              "imageShape" : "roundedRect",
+              "indeterminate" : false,
+              "isOn" : false,
+              "lockAspect" : true,
+              "opacity" : 1,
+              "options" : [
+                "First",
+                "Second",
+                "Third"
+              ],
+              "padding" : 0,
+              "pickerStyle" : "menu",
+              "placeholder" : "",
+              "scrollAxis" : "vertical",
+              "selectedIndex" : 0,
+              "sliderMax" : 100,
+              "sliderMin" : 0,
+              "spacing" : 8,
+              "systemImage" : "star.fill",
+              "text" : "",
+              "toggleStyle" : "switch",
+              "url" : "https:\/\/www.apple.com",
+              "value" : 56,
+              "weight" : "regular",
+              "width" : 240
+            }
+          },
+          {
+            "children" : [
+
+            ],
+            "id" : "ADF2E210-8981-4ED4-8834-18B60AD7FBB1",
+            "kind" : "label",
+            "props" : {
+              "adjustments" : {
+                "blur" : 0,
+                "brightness" : 0,
+                "contrast" : 1,
+                "grayscale" : 0,
+                "saturation" : 1
+              },
+              "align" : "center",
+              "buttonDisplay" : "title",
+              "buttonStyle" : "automatic",
+              "contentMode" : "fill",
+              "controlSize" : "regular",
+              "cornerRadius" : 0,
+              "dateComponents" : "date",
+              "fill" : {
+                "a" : 1,
+                "b" : 1,
+                "g" : 0.48,
+                "r" : 0
+              },
+              "fillHeight" : false,
+              "fillWidth" : false,
+              "fontSize" : 13,
+              "foreground" : {
+                "a" : 1,
+                "b" : 0.2,
+                "g" : 0.45,
+                "r" : 0.95
+              },
+              "glassContainer" : false,
+              "imageAnchor" : "center",
+              "imageShape" : "roundedRect",
+              "indeterminate" : false,
+              "isOn" : false,
+              "lockAspect" : true,
+              "opacity" : 1,
+              "options" : [
+                "First",
+                "Second",
+                "Third"
+              ],
+              "padding" : 0,
+              "pickerStyle" : "menu",
+              "placeholder" : "",
+              "scrollAxis" : "vertical",
+              "selectedIndex" : 0,
+              "sliderMax" : 1,
+              "sliderMin" : 0,
+              "spacing" : 8,
+              "systemImage" : "speaker.wave.3.fill",
+              "text" : "Loud!",
+              "toggleStyle" : "switch",
+              "url" : "https:\/\/www.apple.com",
+              "value" : 0.5,
+              "weight" : "regular"
+            }
+          },
+          {
+            "children" : [
+
+            ],
+            "id" : "590D80E7-45C2-48D1-ADA8-66243A2AC87A",
+            "kind" : "textField",
+            "props" : {
+              "adjustments" : {
+                "blur" : 0,
+                "brightness" : 0,
+                "contrast" : 1,
+                "grayscale" : 0,
+                "saturation" : 1
+              },
+              "align" : "center",
+              "buttonDisplay" : "title",
+              "buttonStyle" : "automatic",
+              "contentMode" : "fill",
+              "controlSize" : "regular",
+              "cornerRadius" : 0,
+              "dateComponents" : "date",
+              "fill" : {
+                "a" : 1,
+                "b" : 1,
+                "g" : 0.48,
+                "r" : 0
+              },
+              "fillHeight" : false,
+              "fillWidth" : false,
+              "fontSize" : 13,
+              "glassContainer" : false,
+              "imageAnchor" : "center",
+              "imageShape" : "roundedRect",
+              "indeterminate" : false,
+              "isOn" : false,
+              "lockAspect" : true,
+              "opacity" : 1,
+              "options" : [
+                "First",
+                "Second",
+                "Third"
+              ],
+              "padding" : 0,
+              "pickerStyle" : "menu",
+              "placeholder" : "Email",
+              "scrollAxis" : "vertical",
+              "selectedIndex" : 0,
+              "sliderMax" : 1,
+              "sliderMin" : 0,
+              "spacing" : 8,
+              "systemImage" : "star.fill",
+              "text" : "",
+              "toggleStyle" : "switch",
+              "url" : "https:\/\/www.apple.com",
+              "value" : 0.5,
+              "weight" : "regular",
+              "width" : 240
+            }
+          },
+          {
+            "children" : [
+
+            ],
+            "id" : "0ED37F38-A13B-4D80-B99F-AE74C7BB5B1E",
+            "kind" : "button",
+            "props" : {
+              "adjustments" : {
+                "blur" : 0,
+                "brightness" : 0,
+                "contrast" : 1,
+                "grayscale" : 0,
+                "saturation" : 1
+              },
+              "align" : "center",
+              "buttonDisplay" : "title",
+              "buttonStyle" : "borderedProminent",
+              "contentMode" : "fill",
+              "controlSize" : "regular",
+              "cornerRadius" : 0,
+              "dateComponents" : "date",
+              "fill" : {
+                "a" : 1,
+                "b" : 1,
+                "g" : 0.48,
+                "r" : 0
+              },
+              "fillHeight" : false,
+              "fillWidth" : false,
+              "fontSize" : 13,
+              "glassContainer" : false,
+              "imageAnchor" : "center",
+              "imageShape" : "roundedRect",
+              "indeterminate" : false,
+              "isOn" : false,
+              "lockAspect" : true,
+              "opacity" : 1,
+              "options" : [
+                "First",
+                "Second",
+                "Third"
+              ],
+              "padding" : 0,
+              "pickerStyle" : "menu",
+              "placeholder" : "",
+              "scrollAxis" : "vertical",
+              "selectedIndex" : 0,
+              "sliderMax" : 1,
+              "sliderMin" : 0,
+              "spacing" : 8,
+              "systemImage" : "plus",
+              "text" : "Send",
+              "toggleStyle" : "switch",
+              "url" : "https:\/\/www.apple.com",
+              "value" : 0.5,
+              "weight" : "regular"
+            }
+          }
+        ],
+        "id" : "D8E15E93-751A-45B6-9DE5-858484D3D129",
+        "kind" : "vstack",
+        "props" : {
+          "adjustments" : {
+            "blur" : 0,
+            "brightness" : 0,
+            "contrast" : 1,
+            "grayscale" : 0,
+            "saturation" : 1
+          },
+          "align" : "center",
+          "buttonDisplay" : "title",
+          "buttonStyle" : "automatic",
+          "contentMode" : "fill",
+          "controlSize" : "regular",
+          "cornerRadius" : 0,
+          "dateComponents" : "date",
+          "fill" : {
+            "a" : 1,
+            "b" : 1,
+            "g" : 0.48,
+            "r" : 0
+          },
+          "fillHeight" : true,
+          "fillWidth" : true,
+          "fontSize" : 13,
+          "glassContainer" : false,
+          "imageAnchor" : "center",
+          "imageShape" : "roundedRect",
+          "indeterminate" : false,
+          "isOn" : false,
+          "lockAspect" : true,
+          "opacity" : 1,
+          "options" : [
+            "First",
+            "Second",
+            "Third"
+          ],
+          "padding" : 20,
+          "pickerStyle" : "menu",
+          "placeholder" : "",
+          "scrollAxis" : "vertical",
+          "selectedIndex" : 0,
+          "sliderMax" : 1,
+          "sliderMin" : 0,
+          "spacing" : 12,
+          "systemImage" : "star.fill",
+          "text" : "",
+          "toggleStyle" : "switch",
+          "url" : "https:\/\/www.apple.com",
+          "value" : 0.5,
+          "weight" : "regular"
+        }
+      },
+      "settings" : {
+        "floating" : false,
+        "height" : 440,
+        "opensAtLaunch" : true,
+        "resizable" : true,
+        "title" : "Conditions",
+        "titleBar" : "standard",
+        "width" : 420
+      },
+      "viewName" : "ContentView"
+    }
+  ]
+}

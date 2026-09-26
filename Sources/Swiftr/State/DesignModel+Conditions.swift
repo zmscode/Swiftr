@@ -134,7 +134,11 @@ extension DesignModel {
 		default:
 			source.kind == .picker
 				? SimpleCondition(source: source.id, op: .equal, value: .number(0))
-				: SimpleCondition(source: source.id, op: .greater, value: .number(source.kind == .slider ? 0.5 : 0))
+				: SimpleCondition(
+					source: source.id, op: .greater,
+					// Halfway along a slider's actual range; above zero for a stepper.
+					value: .number(source.kind == .slider
+						? ((source.props.sliderRange.lowerBound + source.props.sliderRange.upperBound) / 2) : 0))
 		}
 	}
 
@@ -196,6 +200,46 @@ extension DesignModel {
 			}
 			return op.isBinary ? "\(left) \(op.symbol) \(right)" : "\(left) \(op.symbol)"
 		}
+	}
+
+	/// Explains a comparison that can never be true because the value is outside what the
+	/// control can produce, e.g. "> 79" on a slider that goes from 0 to 1.
+	func neverTrueWarning(control controlID: UUID, op: CompareOp, value: ConditionValue) -> String? {
+		guard let control = project.find(controlID) else { return nil }
+		let n = value.number
+		let name = controlName(controlID)
+		switch control.kind {
+		case .slider:
+			let r = control.props.sliderRange
+			let never: Bool
+			switch op {
+			case .greater: never = n >= r.upperBound
+			case .greaterOrEqual: never = n > r.upperBound
+			case .less: never = n <= r.lowerBound
+			case .lessOrEqual: never = n < r.lowerBound
+			case .equal: never = !r.contains(n)
+			default: never = false
+			}
+			return never
+				? "Never true: \(name) goes from \(CodeGenerator.number(r.lowerBound)) to \(CodeGenerator.number(r.upperBound))."
+				: nil
+		case .picker:
+			guard op == .equal, !control.props.options.indices.contains(Int(n)) else { return nil }
+			return "Never true: \(name) has no option \(Int(n))."
+		default:
+			return nil
+		}
+	}
+
+	/// The warning for a Compare node in the node editor, from what's wired into it.
+	func neverTrueWarning(compareNode id: UUID, in graph: ConditionGraph) -> String? {
+		guard case .compare(let op)? = graph.node(id)?.kind,
+			let a = graph.links.first(where: { $0.to == id && $0.port == "a" }),
+			let b = graph.links.first(where: { $0.to == id && $0.port == "b" }),
+			case .control(let controlID)? = graph.node(a.from)?.kind,
+			case .constant(let value)? = graph.node(b.from)?.kind
+		else { return nil }
+		return neverTrueWarning(control: controlID, op: op, value: value)
 	}
 
 	func controlName(_ id: UUID) -> String {

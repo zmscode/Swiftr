@@ -38,7 +38,13 @@ struct NodeContent<Children: View>: View {
 		case .toggle:
 			Toggle(p.text, isOn: controlValue(.bool(p.isOn)).asBool).toggleStyle(option: p.toggleStyle)
 		case .slider:
-			Slider(value: controlValue(.number(p.value)).asNumber, in: 0...1)
+			Group {
+				if let step = p.sliderStep, step > 0 {
+					Slider(value: controlValue(.number(p.value)).asNumber, in: p.sliderRange, step: step)
+				} else {
+					Slider(value: controlValue(.number(p.value)).asNumber, in: p.sliderRange)
+				}
+			}
 				.frame(minWidth: 100)
 		case .stepper:
 			let count = controlValue(.number(Double(Int(p.value)))).asInt
