@@ -40,6 +40,10 @@ struct Props: Codable, Equatable {
 	var action: ButtonAction? = nil
 	var buttonDisplay: ButtonDisplay = .title
 	var toggleStyle: ToggleStyleOption = .switch
+	var symbolRendering: SymbolRendering = .monochrome
+	/// A symbol's second and third layer colors, for palette rendering.
+	var symbolSecondary: RGBA? = nil
+	var symbolTertiary: RGBA? = nil
 	/// The chosen `StyleVariant` id for kinds that have them; nil for the default.
 	var variant: String? = nil
 	/// The `@State` name for a control in generated code (nil derives one from its title).
@@ -128,6 +132,9 @@ extension Props {
 		action = v(.action, d.action)
 		buttonDisplay = v(.buttonDisplay, d.buttonDisplay)
 		toggleStyle = v(.toggleStyle, d.toggleStyle)
+		symbolRendering = v(.symbolRendering, d.symbolRendering)
+		symbolSecondary = v(.symbolSecondary, d.symbolSecondary)
+		symbolTertiary = v(.symbolTertiary, d.symbolTertiary)
 		variant = v(.variant, d.variant)
 		variableName = v(.variableName, d.variableName)
 		imageID = v(.imageID, d.imageID)

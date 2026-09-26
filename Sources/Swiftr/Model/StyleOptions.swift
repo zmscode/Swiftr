@@ -92,6 +92,21 @@ enum AnchorOption: String, Codable, CaseIterable, Identifiable {
 		bottomTrailing
 	var id: String { rawValue }
 
+	/// "Top left", "Center"…
+	var title: String {
+		switch self {
+		case .topLeading: "Top left"
+		case .top: "Top"
+		case .topTrailing: "Top right"
+		case .leading: "Left"
+		case .center: "Center"
+		case .trailing: "Right"
+		case .bottomLeading: "Bottom left"
+		case .bottom: "Bottom"
+		case .bottomTrailing: "Bottom right"
+		}
+	}
+
 	var alignment: Alignment {
 		switch self {
 		case .topLeading: .topLeading
@@ -195,4 +210,18 @@ struct ImageAdjustments: Codable, Equatable {
 	var blur = 0.0
 
 	var isIdentity: Bool { self == ImageAdjustments() }
+}
+
+/// How an SF Symbol uses color.
+enum SymbolRendering: String, Codable, CaseIterable, Identifiable {
+	/// One color for the whole symbol.
+	case monochrome
+	/// Shades of one color, one per layer of the symbol.
+	case hierarchical
+	/// A separate color for each layer.
+	case palette
+	/// The symbol's own built-in colors, where it has them.
+	case multicolor
+
+	var id: String { rawValue }
 }

@@ -122,6 +122,11 @@ struct LayerRow: View {
 		}
 		.onDrop(of: [.plainText], delegate: LayerDropDelegate(model: model, nodeID: node.id, target: dropTarget))
 		.contextMenu { NodeMenu(id: node.id) }
+		.help(
+			isRoot
+				? "\(window.settings.title) window. Double-click to rename; drop components here to add them"
+				: "\(node.kind.displayName). Double-click to rename, drag to move, right-click for more"
+		)
 	}
 
 	private var rowFill: Color {

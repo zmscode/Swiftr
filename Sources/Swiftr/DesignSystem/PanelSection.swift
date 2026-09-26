@@ -7,15 +7,18 @@ struct PanelSection<Content: View>: View {
 	let title: String
 	var onAdd: (() -> Void)? = nil
 	var onRemove: (() -> Void)? = nil
+	/// Tooltip for the title; defaults to the description of that section in `descriptions`.
+	var help: String? = nil
 	@ViewBuilder let content: Content
 	@AppStorage private var collapsed: Bool
 	@State private var isHovered = false
 
 	init(
 		_ title: String, onAdd: (() -> Void)? = nil, onRemove: (() -> Void)? = nil,
-		collapsedByDefault: Bool = false, @ViewBuilder content: () -> Content
+		collapsedByDefault: Bool = false, help: String? = nil, @ViewBuilder content: () -> Content
 	) {
 		self.title = title
+		self.help = help
 		self.onAdd = onAdd
 		self.onRemove = onRemove
 		self.content = content()
@@ -23,6 +26,34 @@ struct PanelSection<Content: View>: View {
 	}
 
 	private var isEmpty: Bool { onAdd != nil }
+
+	/// What each inspector section does, and the SwiftUI it becomes.
+	static var descriptions: [String: String] {
+		[
+			"Window": "The window's scene settings: title, size, title bar and behavior (a Window scene in the generated app)",
+			"Content": "What the component shows: its text, symbol, value or options",
+			"Style": "SwiftUI's built-in styles for this component, and its control size",
+			"Layout": "How children are arranged: direction, alignment, spacing and padding",
+			"Size": "Width and height. Hug fits the content, Fixed sets a size, Fill takes the space available (.frame)",
+			"Image": "Which image, its shape, how it fits its frame (.aspectRatio) and which part stays visible when cropped",
+			"Adjustments": "Color and focus effects on the image (.grayscale, .saturation, .brightness, .contrast, .blur)",
+			"Appearance": "Opacity (.opacity) and corner radius",
+			"Typography": "Font size and weight (.font)",
+			"Fill": "The shape's color (.fill)",
+			"Accent": "The control's highlight color, e.g. a switch's on color or a slider's track (.tint)",
+			"Foreground": "The color of text and symbols (.foregroundStyle)",
+			"Background": "A color behind the component, rounded by the corner radius (.background)",
+			"Border": "An outline around the component, or around an image's shape (.overlay with .strokeBorder)",
+			"Shadow": "A drop shadow (.shadow)",
+			"Liquid Glass": "macOS 26 glass material (.glassEffect, or the glass button style for buttons)",
+			"Condition": "Show this only when a control in this window is set (an if statement in the generated code)",
+			"Code": "The SwiftUI for this component, ready to copy",
+			"Symbol": "The symbol's colors and how it uses them (.symbolRenderingMode, .foregroundStyle)",
+			"App": "The app's name, used for the generated App struct",
+			"Windows": "Every window in the project; click one to edit it",
+			"Images": "Images stored in the project; their names are used in Image(\"name\")",
+		]
+	}
 
 	var body: some View {
 		VStack(alignment: .leading, spacing: 10) {
@@ -38,6 +69,7 @@ struct PanelSection<Content: View>: View {
 							.opacity(!isEmpty && (isHovered || collapsed) ? 1 : 0)
 						Text(title)
 							.font(.system(size: 11, weight: .semibold))
+							.tooltip(help ?? Self.descriptions[title])
 							.foregroundStyle(isEmpty ? .secondary : .primary)
 						Spacer(minLength: 0)
 					}
@@ -71,16 +103,18 @@ struct PanelSection<Content: View>: View {
 /// A small caption above a group of fields, e.g. "Dimensions" above W and H.
 struct PanelCaptioned<Content: View>: View {
 	let caption: String
+	var help: String? = nil
 	@ViewBuilder let content: Content
 
-	init(_ caption: String, @ViewBuilder content: () -> Content) {
+	init(_ caption: String, help: String? = nil, @ViewBuilder content: () -> Content) {
 		self.caption = caption
+		self.help = help
 		self.content = content()
 	}
 
 	var body: some View {
 		VStack(alignment: .leading, spacing: 5) {
-			Text(caption).font(.system(size: 10)).foregroundStyle(.secondary)
+			Text(caption).font(.system(size: 10)).foregroundStyle(.secondary).tooltip(help)
 			content
 		}
 	}
@@ -90,6 +124,7 @@ struct PanelCaptioned<Content: View>: View {
 struct PanelTextButton: View {
 	let title: String
 	let symbol: String
+	var help: String? = nil
 	let action: () -> Void
 	@State private var isHovered = false
 
@@ -108,6 +143,7 @@ struct PanelTextButton: View {
 		.buttonStyle(.plain)
 		.foregroundStyle(.secondary)
 		.onHover { isHovered = $0 }
+		.tooltip(help)
 	}
 }
 

@@ -27,6 +27,7 @@ struct NodeInspector: View {
 				VStack(spacing: 0) {
 					if isRoot { windowSection }
 					if hasContent { contentSection }
+					if kind == .image { symbolSection }
 					if hasStyle { styleSection }
 					if kind.isContainer && kind != .menu { layoutSection }
 					if kind.hasSize { sizeSection }
@@ -36,7 +37,8 @@ struct NodeInspector: View {
 					if kind.usesFont { typographySection }
 					if kind.isShape { fillSection }
 					if kind.usesAccent { colorSection("Accent", \.accent, fallback: .blue) }
-					if kind.supportsForeground {
+					// A symbol's color lives in its Symbol section.
+					if kind.supportsForeground && kind != .image {
 						colorSection("Foreground", \.foreground, fallback: .black)
 					}
 					if kind.supportsBackground {
@@ -104,14 +106,14 @@ struct NodeInspector: View {
 					])
 			}
 			VStack(alignment: .leading, spacing: 5) {
-				PanelCheckbox(title: "Resizable", isOn: win(\.resizable))
+				PanelCheckbox(title: "Resizable", isOn: win(\.resizable), help: "Let people resize the window. Off makes it a fixed size (.windowResizability(.contentSize))")
 				PanelCheckbox(
 					title: "Float above other windows", isOn: win(\.floating),
 					help: "Applied in Preview mode, so it doesn't cover the panels while editing")
-				PanelCheckbox(title: "Open at launch", isOn: win(\.opensAtLaunch))
+				PanelCheckbox(title: "Open at launch", isOn: win(\.opensAtLaunch), help: "Open this window when the app starts (.defaultLaunchBehavior)")
 			}
 			PanelCaptioned("View name") {
-				PanelCommitField(placeholder: "View name", value: model.viewNameBinding(window.id))
+				PanelCommitField(placeholder: "View name", value: model.viewNameBinding(window.id), help: "The name of this window's SwiftUI view struct. Press Return to apply")
 			}
 		}
 	}
@@ -131,10 +133,12 @@ struct NodeInspector: View {
 			if kind.hasTitle {
 				PanelTextField(
 					placeholder: kind == .text ? "Text" : "Title", text: bind(\.text),
-					multiline: kind == .text)
+					multiline: kind == .text,
+					help: kind == .button && props.buttonDisplay == .icon
+						? "Title (read by VoiceOver for an icon-only button)" : nil)
 			}
 			if kind.hasPlaceholder {
-				PanelTextField(placeholder: "Placeholder", text: bind(\.placeholder))
+				PanelTextField(placeholder: "Placeholder", text: bind(\.placeholder), help: "Hint text shown while the field is empty")
 			}
 			if kind == .button {
 				PanelCaptioned("Shows") {
@@ -158,17 +162,17 @@ struct NodeInspector: View {
 				PanelCaptioned("Action") {
 					PanelMenu(
 						label: .icon("cursorarrow.click"), selection: bind(\.action),
-						options: actionOptions)
+						options: actionOptions, help: "What the button does when clicked (try it in Preview)")
 				}
 			}
 			if kind == .link {
-				PanelTextField(placeholder: "URL", text: bind(\.url), monospaced: true)
+				PanelTextField(placeholder: "URL", text: bind(\.url), monospaced: true, help: "The web address the link opens")
 			}
 			if kind == .toggle {
-				PanelCheckbox(title: "Initially on", isOn: bind(\.isOn))
+				PanelCheckbox(title: "Initially on", isOn: bind(\.isOn), help: "Whether the toggle starts switched on")
 			}
 			if kind == .disclosureGroup {
-				PanelCheckbox(title: "Initially expanded", isOn: bind(\.isOn))
+				PanelCheckbox(title: "Initially expanded", isOn: bind(\.isOn), help: "Whether the group starts open")
 			}
 			if kind == .slider {
 				PanelCaptioned("Value") {
@@ -197,7 +201,7 @@ struct NodeInspector: View {
 					label: .letter("Value"), value: bind(\.value), range: -10_000...10_000)
 			}
 			if kind == .progress {
-				PanelCheckbox(title: "Indeterminate", isOn: bind(\.indeterminate))
+				PanelCheckbox(title: "Indeterminate", isOn: bind(\.indeterminate), help: "Show activity without a value (a spinner), for work of unknown length")
 				if !props.indeterminate {
 					PanelPercentField(label: .letter("Value"), value: bind(\.value))
 				}
@@ -221,7 +225,7 @@ struct NodeInspector: View {
 				}
 			}
 			if kind == .tabView {
-				PanelTextButton(title: "Add Tab", symbol: "plus") { model.addTab(to: id) }
+				PanelTextButton(title: "Add Tab", symbol: "plus", help: "Add another tab to the end") { model.addTab(to: id) }
 			}
 			if kind == .splitView {
 				PanelSegmented(
@@ -276,7 +280,7 @@ struct NodeInspector: View {
 				}
 			}
 		}
-		PanelTextButton(title: "Add option", symbol: "plus") {
+		PanelTextButton(title: "Add option", symbol: "plus", help: "Add another choice to the picker") {
 			model.updateProps(id, key: \Props.selectedIndex) {
 				$0.options.append("Option \($0.options.count + 1)")
 			}
@@ -296,7 +300,8 @@ struct NodeInspector: View {
 				if props.glass == nil {
 					PanelMenu(
 						label: .icon("paintbrush"), selection: bind(\.buttonStyle),
-						options: ButtonStyleOption.allCases.map { ($0, $0.title) })
+						options: ButtonStyleOption.allCases.map { ($0, $0.title) },
+						help: "The button's style (.buttonStyle)")
 				} else {
 					PanelCaption("Glass style, set in Liquid Glass below.")
 				}
@@ -326,7 +331,7 @@ struct NodeInspector: View {
 				} else {
 					PanelMenu(
 						label: .icon("paintbrush"), selection: current,
-						options: variants.map { ($0.id, $0.title) })
+						options: variants.map { ($0.id, $0.title) }, help: "The component's SwiftUI style")
 				}
 			}
 			if kind.usesControlSize {
@@ -425,9 +430,9 @@ struct NodeInspector: View {
 			}
 			if kind == .photo {
 				HStack {
-					PanelCheckbox(title: "Keep aspect ratio", isOn: bind(\.lockAspect))
+					PanelCheckbox(title: "Keep aspect ratio", isOn: bind(\.lockAspect), help: "Keep the image's proportions when resizing it")
 					Spacer()
-					PanelTextButton(title: "Original Size", symbol: "arrow.uturn.backward") {
+					PanelTextButton(title: "Original Size", symbol: "arrow.uturn.backward", help: "Reset to the image's own pixel size") {
 						model.resetImageSize(id)
 					}
 				}
@@ -456,9 +461,10 @@ struct NodeInspector: View {
 				VStack(alignment: .leading, spacing: 4) {
 					PanelMenu(
 						selection: bind(\.imageID),
-						options: [(nil, "No image")] + model.project.images.map { ($0.id, $0.name) }
+						options: [(nil, "No image")] + model.project.images.map { ($0.id, $0.name) },
+						help: "Choose one of the project's images"
 					)
-					PanelTextButton(title: "Choose File…", symbol: "folder") {
+					PanelTextButton(title: "Choose File…", symbol: "folder", help: "Add an image file to the project and show it here") {
 						model.chooseImage(for: id)
 					}
 				}
@@ -490,9 +496,57 @@ struct NodeInspector: View {
 					])
 			}
 			if props.contentMode != .stretch {
-				PanelCaptioned(props.contentMode == .fill ? "Crop anchor" : "Position") {
+				PanelCaptioned(
+					props.contentMode == .fill ? "Crop anchor" : "Position",
+					help: props.contentMode == .fill
+						? "Which part of the image stays visible when Fill crops it"
+						: "Where the image sits in its frame"
+				) {
 					AnchorGrid(selection: bind(\.imageAnchor))
 				}
+			}
+		}
+	}
+
+	// MARK: Symbol
+
+	private var symbolSection: some View {
+		PanelSection("Symbol") {
+			PanelCaptioned("Rendering", help: "How the symbol uses color (.symbolRenderingMode)") {
+				PanelSegmented(
+					selection: bind(\.symbolRendering),
+					items: [
+						(.monochrome, PanelSegmentLabel(text: "Mono", help: "One color for the whole symbol")),
+						(.hierarchical, PanelSegmentLabel(text: "Layers", help: "Shades of the color, one per layer of the symbol")),
+						(.palette, PanelSegmentLabel(text: "Palette", help: "A separate color for each layer")),
+						(.multicolor, PanelSegmentLabel(text: "Multi", help: "The symbol's own colors, where it has them")),
+					])
+			}
+			symbolColor(
+				props.symbolRendering == .palette ? "Primary" : "Color", \.foreground, fallback: .blue,
+				help: "The symbol's color (.foregroundStyle)")
+			if props.symbolRendering == .palette {
+				symbolColor("Secondary", \.symbolSecondary, fallback: RGBA(r: 0.55, g: 0.55, b: 0.6), help: "The second layer's color")
+				symbolColor("Tertiary", \.symbolTertiary, fallback: RGBA(r: 0.8, g: 0.8, b: 0.85), help: "The third layer's color (for symbols with three layers)")
+			}
+			if props.symbolRendering == .multicolor {
+				PanelCaption("Parts with built-in colors keep them; the rest use the color above.")
+			}
+		}
+	}
+
+	/// An optional symbol color: a row with − once set, or a button to add it.
+	@ViewBuilder
+	private func symbolColor(_ title: String, _ path: WritableKeyPath<Props, RGBA?>, fallback: RGBA, help: String) -> some View {
+		if let color = props[keyPath: path] {
+			PanelCaptioned(title, help: help) {
+				PanelColorRow(
+					color: Binding(get: { color }, set: { bind(path).wrappedValue = $0 }),
+					onRemove: { bind(path).wrappedValue = nil })
+			}
+		} else {
+			PanelTextButton(title: "Add \(title.lowercased()) color", symbol: "plus", help: help) {
+				bind(path).wrappedValue = fallback
 			}
 		}
 	}
@@ -525,7 +579,7 @@ struct NodeInspector: View {
 					.frame(maxWidth: 120)
 				Spacer()
 				if !a.isIdentity {
-					PanelTextButton(title: "Reset", symbol: "arrow.counterclockwise") {
+					PanelTextButton(title: "Reset", symbol: "arrow.counterclockwise", help: "Undo all adjustments") {
 						bind(\.adjustments).wrappedValue = ImageAdjustments()
 					}
 				}
@@ -621,7 +675,7 @@ struct NodeInspector: View {
 			} b: {
 				PanelMenu(
 					selection: bind(\.weight),
-					options: FontWeight.allCases.map { ($0, $0.rawValue.capitalized) })
+					options: FontWeight.allCases.map { ($0, $0.rawValue.capitalized) }, help: "Font weight")
 			}
 		}
 	}
@@ -671,7 +725,7 @@ struct NodeInspector: View {
 							get: { tint }, set: { glassBinding(\.tint, glass).wrappedValue = $0 }),
 						onRemove: { glassBinding(\.tint, glass).wrappedValue = nil })
 				} else {
-					PanelTextButton(title: "Add tint", symbol: "plus") {
+					PanelTextButton(title: "Add tint", symbol: "plus", help: "Color the glass") {
 						glassBinding(\.tint, glass).wrappedValue = RGBA(
 							r: 0.2, g: 0.5, b: 1, a: 0.6)
 					}
@@ -743,7 +797,7 @@ struct AnchorGrid: View {
 								.contentShape(Rectangle())
 						}
 						.buttonStyle(.plain)
-						.help(anchor.rawValue)
+						.help(anchor.title)
 					}
 				}
 			}

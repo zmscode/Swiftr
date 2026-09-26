@@ -25,7 +25,10 @@ struct ConditionSection: View {
 						Text(model.describe(condition)).font(PanelStyle.font)
 					}
 				}
-				PanelTextButton(title: "Open in Conditions", symbol: "point.3.connected.trianglepath.dotted") {
+				PanelTextButton(
+					title: "Open in Conditions", symbol: "point.3.connected.trianglepath.dotted",
+					help: "Edit this window's conditions as a node graph (⌥⌘K)"
+				) {
 					model.windowManager?.showConditions(
 						for: model.project.windowIndex(containing: node.id).map { model.project.windows[$0].id })
 				}
@@ -51,7 +54,8 @@ struct ConditionSection: View {
 					set: { id in
 						if let node = model.project.find(id) { model.setCondition(model.defaultCondition(source: node), for: self.node.id) }
 					}),
-				options: sources.map { ($0.id, model.controlName($0.id)) })
+				options: sources.map { ($0.id, model.controlName($0.id)) },
+				help: "The control in this window whose value decides whether this shows")
 		}
 		if let source {
 			switch source.kind.conditionValueType {
@@ -73,14 +77,16 @@ struct ConditionSection: View {
 					if source.kind == .picker {
 						PanelMenu(
 							selection: valueBinding(condition, as: { .number(Double($0)) }, get: { Int($0?.number ?? 0) }),
-							options: source.props.options.indices.map { ($0, source.props.options[$0]) })
+							options: source.props.options.indices.map { ($0, source.props.options[$0]) },
+							help: "The option the picker must be on")
 					} else {
 						PanelNumberField(
 							label: .letter("="),
 							value: valueBinding(condition, as: { .number($0) }, get: { $0?.number ?? 0 }),
 							range: -100_000...100_000,
 							step: source.kind == .slider
-								? (source.props.sliderRange.upperBound - source.props.sliderRange.lowerBound) / 100 : 1)
+								? (source.props.sliderRange.upperBound - source.props.sliderRange.lowerBound) / 100 : 1,
+							help: "The value to compare with")
 					}
 				}
 			case .text?:
@@ -88,7 +94,8 @@ struct ConditionSection: View {
 				if condition.op?.isBinary == true {
 					PanelTextField(
 						placeholder: "Text",
-						text: valueBinding(condition, as: { .text($0) }, get: { $0?.text ?? "" }))
+						text: valueBinding(condition, as: { .text($0) }, get: { $0?.text ?? "" }),
+						help: "The text to compare with")
 				}
 			case nil:
 				EmptyView()
@@ -106,7 +113,7 @@ struct ConditionSection: View {
 					if !op.isBinary { c.value = nil } else if c.value == nil { c.value = op.isTextOnly ? .text("") : .number(0) }
 					model.setCondition(c, for: node.id)
 				}),
-			options: ops.map { ($0, $0.symbol) })
+			options: ops.map { ($0, $0.symbol) }, help: "How to compare the control's value")
 	}
 
 	private func valueBinding<T>(

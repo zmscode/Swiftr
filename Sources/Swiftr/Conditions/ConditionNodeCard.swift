@@ -24,6 +24,7 @@ struct ConditionNodeCard: View {
 							nodeId: node.id, id: port.id, type: .target, position: .left,
 							color: .gray
 						)
+						.help("Input: drag here from another node's output")
 						.offset(x: -16)
 						.padding(.trailing, -16)
 						Text(port.label).font(.system(size: 10)).foregroundStyle(.secondary)
@@ -38,6 +39,7 @@ struct ConditionNodeCard: View {
 							nodeId: node.id, id: "out", type: .source, position: .right,
 							color: color(for: output)
 						)
+						.help("Output (\(outputLabel(output))): drag to another node's input")
 						.offset(x: 16)
 						.padding(.leading, -16)
 					}

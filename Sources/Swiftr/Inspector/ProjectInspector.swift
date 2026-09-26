@@ -18,7 +18,7 @@ struct ProjectInspector: View {
 				VStack(spacing: 0) {
 					PanelSection("App") {
 						PanelCaption("Name")
-						PanelCommitField(placeholder: "App name", value: model.appNameBinding)
+						PanelCommitField(placeholder: "App name", value: model.appNameBinding, help: "The app's name, used for its App struct. Press Return to apply")
 					}
 					PanelSection("Images") {
 						if model.project.images.isEmpty {
@@ -90,7 +90,8 @@ struct ImageAssetRow: View {
 			.frame(width: 26, height: 26)
 			.clipShape(RoundedRectangle(cornerRadius: 4))
 			PanelCommitField(
-				value: Binding(get: { asset.name }, set: { model.renameImage(asset.id, to: $0) }))
+				value: Binding(get: { asset.name }, set: { model.renameImage(asset.id, to: $0) }),
+				help: "The image's name in code, Image(\"name\"). Press Return to apply")
 			let uses = model.project.usageCount(of: asset.id)
 			Text(uses == 0 ? "unused" : "×\(uses)")
 				.font(PanelStyle.font)

@@ -10,6 +10,12 @@ extension CodeTheme {
 	/// The panel accent: selection, focus rings, chosen items.
 	var accent: Color { color(member) }
 
+	/// The theme's distinct syntax colors, for cycling through icon colors.
+	var iconColors: [String] {
+		var seen = Set<String>()
+		return [keyword, type, member, number, string, attribute].filter { seen.insert($0.uppercased()).inserted }
+	}
+
 	/// Icon colors in themed panels: each family of components takes one of the theme's syntax colors.
 	func color(for family: ComponentKind.Family) -> Color {
 		switch family {
@@ -26,7 +32,13 @@ extension Optional where Wrapped == CodeTheme {
 	/// The theme's accent, or the standard selection blue in native panels.
 	var accent: Color { self?.accent ?? .selectionBlue }
 
-	func tint(_ kind: ComponentKind) -> Color { self?.color(for: kind.family) ?? kind.tint }
+	/// A component's icon color: cycles through the theme's syntax colors by Library position, so
+	/// neighboring tiles differ (the native colors when panels aren't themed).
+	func tint(_ kind: ComponentKind) -> Color {
+		guard let theme = self else { return kind.tint }
+		let colors = theme.iconColors
+		return theme.color(colors[kind.libraryIndex % colors.count])
+	}
 }
 
 extension CodeTheme {

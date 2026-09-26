@@ -45,7 +45,9 @@ struct SizeField: View {
 			.fixedSize()
 		}
 		.fieldChrome()
-		.help(axis == .horizontal ? "Width" : "Height")
+		.help(
+			"\(axis == .horizontal ? "Width" : "Height"): Hug fits the content, Fixed sets a size, Fill takes the space available. Drag the letter to adjust"
+		)
 	}
 
 	private func title(_ m: SizeMode) -> String {

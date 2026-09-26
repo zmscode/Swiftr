@@ -59,7 +59,8 @@ struct ConditionsPanel: View {
 					set: { model.conditionsWindowID = $0 }),
 				options: model.project.windows.map {
 					($0.id, $0.settings.title.isEmpty ? $0.viewName : $0.settings.title)
-				}
+				},
+				help: "Which window's conditions to edit"
 			)
 			.frame(width: 180)
 			if let window = model.conditionsWindow { addMenu(window) }

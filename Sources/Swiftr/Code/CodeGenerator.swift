@@ -268,6 +268,14 @@ struct CodeGenerator {
 				p.indeterminate ? "ProgressView()" : "ProgressView(value: \(Self.number(p.value)))"
 		case .image:
 			head = "Image(systemName: \(Self.literal(p.systemImage)))"
+			if p.symbolRendering != .monochrome {
+				mods.append(".symbolRenderingMode(.\(p.symbolRendering.rawValue))")
+			}
+			if p.symbolRendering == .palette {
+				var colors = [p.foreground.map(Self.color) ?? ".primary", p.symbolSecondary.map(Self.color) ?? ".secondary"]
+				if let tertiary = p.symbolTertiary { colors.append(Self.color(tertiary)) }
+				mods.append(".foregroundStyle(\(colors.joined(separator: ", ")))")
+			}
 		case .rectangle:
 			head = "RoundedRectangle(cornerRadius: \(Self.number(p.cornerRadius)))"
 			mods.append(".fill(\(Self.color(p.fill)))")
@@ -390,7 +398,8 @@ struct CodeGenerator {
 		if node.kind.usesFont && node.kind != .button, let font = Self.fontModifier(p) {
 			mods.append(font)
 		}
-		if let fg = p.foreground {
+		// A palette symbol already set its layer colors above.
+		if let fg = p.foreground, !(node.kind == .image && p.symbolRendering == .palette) {
 			mods.append(".foregroundStyle(\(Self.color(fg)))")
 		}
 		if node.kind.usesAccent, let accent = p.accent {

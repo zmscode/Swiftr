@@ -98,6 +98,7 @@ struct SearchField: View {
 		HStack(spacing: 5) {
 			Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
 			TextField("Filter", text: $text).textFieldStyle(.plain)
+				.help("Filter components by name")
 			if !text.isEmpty {
 				Button {
 					text = ""

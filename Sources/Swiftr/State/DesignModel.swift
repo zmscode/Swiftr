@@ -266,7 +266,7 @@ final class DesignModel {
 	}
 
 	static func supportsInPlaceEdit(_ kind: ComponentKind) -> Bool {
-		kind.isShape || kind == .photo || kind.usesSymbol
+		kind.isShape || kind == .photo || kind == .divider || kind.usesSymbol
 			|| [.text, .button, .link, .toggle].contains(kind)
 	}
 

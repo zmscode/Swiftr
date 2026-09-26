@@ -41,6 +41,7 @@ struct PanelNumberField: View {
 	var body: some View {
 		HStack(spacing: 6) {
 			PanelScrubLabel(label: label, value: $value, range: range, step: step)
+				.tooltip(help)
 			TextField(
 				"", value: Binding(get: { value }, set: { value = $0.clamped(to: range) }),
 				format: .number.precision(.fractionLength(0...2))
@@ -48,10 +49,11 @@ struct PanelNumberField: View {
 			.textFieldStyle(.plain)
 			.font(PanelStyle.font.monospacedDigit())
 			.focused($focused)
+			.tooltip(help)
 			if let unit { Text(unit).font(PanelStyle.font).foregroundStyle(.tertiary) }
 		}
 		.fieldChrome(focused: focused)
-		.help(help)
+		.tooltip(help)
 	}
 }
 
@@ -75,6 +77,8 @@ struct PanelTextField: View {
 	@Binding var text: String
 	var monospaced = false
 	var multiline = false
+	/// Tooltip; defaults to the placeholder.
+	var help: String? = nil
 	@FocusState private var focused: Bool
 
 	var body: some View {
@@ -95,7 +99,9 @@ struct PanelTextField: View {
 		.background(RoundedRectangle(cornerRadius: PanelStyle.radius).fill(PanelStyle.fieldFill))
 		.overlay(
 			RoundedRectangle(cornerRadius: PanelStyle.radius)
-				.strokeBorder(focused ? panelTheme.accent : .clear, lineWidth: 1.5))
+				.strokeBorder(focused ? panelTheme.accent : .clear, lineWidth: 1.5)
+		)
+		.tooltip(help ?? placeholder)
 	}
 }
 
@@ -105,10 +111,11 @@ struct PanelCommitField: View {
 	var placeholder = ""
 	@Binding var value: String
 	var monospaced = true
+	var help: String? = nil
 	@State private var draft = ""
 
 	var body: some View {
-		PanelTextField(placeholder: placeholder, text: $draft, monospaced: monospaced)
+		PanelTextField(placeholder: placeholder, text: $draft, monospaced: monospaced, help: help)
 			.onAppear { draft = value }
 			.onChange(of: value) { _, new in draft = new }
 			.onSubmit {
@@ -123,6 +130,7 @@ struct PanelMenu<Value: Hashable>: View {
 	var label: PanelLabel? = nil
 	@Binding var selection: Value
 	let options: [(value: Value, title: String)]
+	var help: String = ""
 
 	var body: some View {
 		Menu {
@@ -154,6 +162,7 @@ struct PanelMenu<Value: Hashable>: View {
 		.menuStyle(.button)
 		.buttonStyle(.plain)
 		.menuIndicator(.hidden)
+		.tooltip(help)
 	}
 }
 
@@ -201,5 +210,13 @@ struct PanelCheckbox: View {
 			.toggleStyle(.checkbox)
 			.controlSize(.small)
 			.help(help)
+	}
+}
+
+extension View {
+	/// A hover tooltip, skipped when empty (so an unset tooltip doesn't show a blank one).
+	@ViewBuilder
+	func tooltip(_ text: String?) -> some View {
+		if let text, !text.isEmpty { help(text) } else { self }
 	}
 }

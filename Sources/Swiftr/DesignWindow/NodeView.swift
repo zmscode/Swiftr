@@ -74,7 +74,7 @@ struct NodeView: View {
 				.overlay(alignment: .topLeading) { nameTag }
 				.overlay(alignment: .topTrailing) { conditionBadge }
 				.overlay { inPlaceEditor }
-				.popover(isPresented: symbolBrowserShown, arrowEdge: .bottom) {
+				.popover(isPresented: symbolBrowserShown, arrowEdge: .trailing) {
 					SymbolBrowser(selection: model.propBinding(node.id, \.systemImage)) {
 						model.inPlaceEdit = nil
 					}
@@ -126,6 +126,10 @@ struct NodeView: View {
 		let event = NSApp.currentEvent
 		if let flags = event?.modifierFlags, flags.contains(.shift) || flags.contains(.command) {
 			model.select(node.id, extending: true)
+		} else if event?.clickCount == 2, node.kind == .photo, model.nsImage(node.props.imageID) == nil {
+			// An empty image asks for a file first; once it has one, double-click shows handles.
+			model.select(node.id)
+			model.chooseImage(for: node.id)
 		} else if event?.clickCount == 2, !node.kind.isContainer {
 			model.beginInPlaceEdit(node.id)
 		} else {
@@ -150,6 +154,12 @@ struct NodeView: View {
 		if isEditingInPlace {
 			if node.kind.isShape || node.kind == .photo {
 				ShapeHandles(node: node)
+			} else if node.kind == .image {
+				// A symbol's size is its font size; the symbol browser opens alongside.
+				ShapeHandles(node: node, mode: .fontScale)
+			} else if node.kind == .divider {
+				// A divider runs across its stack: horizontal in a vertical stack, and vice versa.
+				ShapeHandles(node: node, mode: .length(parentAxis == .horizontal ? .vertical : .horizontal))
 			} else if [.text, .button, .link, .toggle].contains(node.kind) && !editsSymbol {
 				InlineTextEditor(node: node)
 			}

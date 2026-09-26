@@ -17,6 +17,7 @@ struct PanelColorRow: View {
 					Swatch(color: color).frame(width: 16, height: 16)
 				}
 				.buttonStyle(.plain)
+				.help("Choose a color")
 				.popover(isPresented: $showPicker, arrowEdge: .leading) {
 					ColorPopover(color: $color)
 				}
@@ -25,6 +26,7 @@ struct PanelColorRow: View {
 					.font(PanelStyle.font.monospaced())
 					.focused($hexFocused)
 					.onSubmit { commitHex() }
+					.help("Hex color, e.g. FF8800")
 					.onChange(of: hexFocused) { _, focused in if !focused { commitHex() } }
 			}
 			.fieldChrome(focused: hexFocused)
@@ -34,7 +36,7 @@ struct PanelColorRow: View {
 			)
 			.frame(width: 74)
 
-			if let onRemove { PanelIconButton(symbol: "minus", help: "Remove", action: onRemove) }
+			if let onRemove { PanelIconButton(symbol: "minus", help: "Remove this color", action: onRemove) }
 		}
 		.onAppear { hexDraft = String(color.hex.dropFirst()) }
 		.onChange(of: color) { _, c in if !hexFocused { hexDraft = String(c.hex.dropFirst()) } }

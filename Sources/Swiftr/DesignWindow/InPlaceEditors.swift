@@ -31,10 +31,31 @@ struct InlineTextEditor: View {
 /// Double-click on a shape: handles. Edge and corner squares resize (switching that
 /// axis to a fixed size); the round handles inside a rectangle's corners set its corner radius.
 struct ShapeHandles: View {
+	/// What dragging the handles changes.
+	enum Mode: Equatable {
+		/// Width and height (shapes, images).
+		case frame
+		/// A symbol's size, which is its font size; corners only, keeping proportions.
+		case fontScale
+		/// A divider's length along one axis.
+		case length(Axis)
+	}
+
 	@Environment(DesignModel.self) private var model
 	let node: Node
+	var mode: Mode = .frame
 	@State private var dragStart: CGSize?
+	@State private var fontStart: Double?
 	@State private var radiusStart: Double?
+
+	private var visibleHandles: [Handle] {
+		switch mode {
+		case .frame: Handle.allCases
+		case .fontScale: [.topLeading, .topTrailing, .bottomLeading, .bottomTrailing]
+		case .length(.horizontal): [.leading, .trailing]
+		case .length(.vertical): [.top, .bottom]
+		}
+	}
 
 	private enum Handle: CaseIterable {
 		case top, bottom, leading, trailing, topLeading, topTrailing, bottomLeading, bottomTrailing
@@ -78,7 +99,7 @@ struct ShapeHandles: View {
 					}
 				}
 
-				ForEach(Handle.allCases, id: \.self) { handle in
+				ForEach(visibleHandles, id: \.self) { handle in
 					resizeHandle(handle, in: inner)
 				}
 
@@ -97,6 +118,12 @@ struct ShapeHandles: View {
 	}
 
 	private func label(_ inner: CGRect) -> String {
+		switch mode {
+		case .fontScale: return "\(Int(node.props.fontSize.rounded())) pt"
+		case .length(let axis):
+			return "\(Int((axis == .horizontal ? inner.width : inner.height).rounded())) long"
+		case .frame: break
+		}
 		let size = "\(Int(inner.width.rounded())) × \(Int(inner.height.rounded()))"
 		return node.kind == .rectangle || node.kind == .photo
 			? "\(size)  ◜ \(Int(node.props.cornerRadius))" : size
@@ -119,6 +146,17 @@ struct ShapeHandles: View {
 					.onChanged { drag in
 						let start = dragStart ?? inner.size
 						dragStart = start
+						if mode == .fontScale {
+							// Grow the symbol by whichever direction moved more, keeping its shape.
+							let font = fontStart ?? node.props.fontSize
+							fontStart = font
+							let dx = h.x * drag.translation.width / max(start.width, 1)
+							let dy = h.y * drag.translation.height / max(start.height, 1)
+							let factor = 1 + (abs(dx) > abs(dy) ? dx : dy)
+							let size = (font * factor).rounded().clamped(to: 6...600)
+							model.updateProps(node.id, key: \Props.fontSize) { $0.fontSize = size }
+							return
+						}
 						var w = (start.width + h.x * drag.translation.width).rounded()
 						var hgt = (start.height + h.y * drag.translation.height).rounded()
 						// Images keep their proportions (unless unlocked): the larger change wins.
@@ -146,7 +184,10 @@ struct ShapeHandles: View {
 							}
 						}
 					}
-					.onEnded { _ in dragStart = nil }
+					.onEnded { _ in
+						dragStart = nil
+						fontStart = nil
+					}
 			)
 	}
 

@@ -20,6 +20,7 @@ struct SymbolField: View {
 			.contentShape(Rectangle())
 		}
 		.buttonStyle(.plain)
+		.help("The SF Symbol. Click to search all symbols")
 		.popover(isPresented: $showBrowser, arrowEdge: .leading) {
 			SymbolBrowser(selection: $name) { showBrowser = false }
 		}

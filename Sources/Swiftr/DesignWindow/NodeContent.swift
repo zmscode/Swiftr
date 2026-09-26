@@ -67,7 +67,7 @@ struct NodeContent<Children: View>: View {
 				ProgressView(value: p.value)
 			}
 		case .image:
-			Image(systemName: p.systemImage)
+			SymbolImage(props: p)
 		case .rectangle:
 			RoundedRectangle(cornerRadius: p.cornerRadius).fill(p.fill.color)
 		case .circle:
@@ -147,7 +147,7 @@ struct NodeContent<Children: View>: View {
 					Rectangle().fill(Color.secondary.opacity(0.15))
 					VStack(spacing: 4) {
 						Image(systemName: "photo").font(.title2)
-						if !live { Text("Drop an image here").font(.caption) }
+						if !live { Text("Double-click or drop an image").font(.caption) }
 					}
 					.foregroundStyle(.secondary)
 				}
@@ -370,4 +370,35 @@ extension Binding where Value == ConditionValue {
 	var asNumber: Binding<Double> { Binding<Double>(get: { wrappedValue.number }, set: { wrappedValue = .number($0) }) }
 	var asInt: Binding<Int> { Binding<Int>(get: { Int(wrappedValue.number) }, set: { wrappedValue = .number(Double($0)) }) }
 	var asText: Binding<String> { Binding<String>(get: { wrappedValue.text }, set: { wrappedValue = .text($0) }) }
+}
+
+/// An SF Symbol with its rendering mode, and its layer colors when rendered as a palette.
+struct SymbolImage: View {
+	let props: Props
+
+	var body: some View {
+		let image = Image(systemName: props.systemImage).symbolRenderingMode(props.symbolRendering.mode)
+		if props.symbolRendering == .palette {
+			let primary = props.foreground?.color ?? .primary
+			let secondary = props.symbolSecondary?.color ?? .secondary
+			if let tertiary = props.symbolTertiary {
+				image.foregroundStyle(primary, secondary, tertiary.color)
+			} else {
+				image.foregroundStyle(primary, secondary)
+			}
+		} else {
+			image
+		}
+	}
+}
+
+extension SymbolRendering {
+	var mode: SymbolRenderingMode {
+		switch self {
+		case .monochrome: .monochrome
+		case .hierarchical: .hierarchical
+		case .palette: .palette
+		case .multicolor: .multicolor
+		}
+	}
 }

@@ -15,7 +15,10 @@ struct StyleModifier: ViewModifier {
 			.if(kind.usesFont && kind != .button) {
 				$0.font(.system(size: props.fontSize, weight: props.weight.fontWeight))
 			}
-			.if(props.foreground != nil) { $0.foregroundStyle(props.foreground?.color ?? .primary) }
+			// A palette symbol sets its own layer colors (see SymbolImage).
+			.if(props.foreground != nil && !(kind == .image && props.symbolRendering == .palette)) {
+				$0.foregroundStyle(props.foreground?.color ?? .primary)
+			}
 			.if(kind.usesAccent && props.accent != nil) { $0.tint(props.accent?.color) }
 			.frame(
 				width: fillsWindow ? nil : props.width.map { CGFloat($0) },

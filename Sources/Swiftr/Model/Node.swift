@@ -41,8 +41,12 @@ struct Node: Identifiable, Codable, Equatable {
 			p.width = 120
 			p.height = 60
 			p.cornerRadius = 8
-		case .circle, .ellipse:
+		case .circle:
 			p.width = 60
+			p.height = 60
+		case .ellipse:
+			// Wider than tall, so it doesn't look like a circle.
+			p.width = 100
 			p.height = 60
 		case .capsule:
 			p.width = 120
