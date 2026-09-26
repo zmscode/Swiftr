@@ -28,6 +28,9 @@ struct LibraryPanel: View {
 					.disabled(!model.canUndo)
 				PanelIconButton(symbol: "arrow.uturn.forward", help: "Redo (⇧⌘Z)") { model.redo() }
 					.disabled(!model.canRedo)
+				PanelIconButton(symbol: "point.3.connected.trianglepath.dotted", help: "Conditions (⌥⌘K)") {
+					model.windowManager?.showConditions()
+				}
 				PanelIconButton(
 					symbol: "chevron.left.forwardslash.chevron.right",
 					help: "Show generated code (⌘E)"

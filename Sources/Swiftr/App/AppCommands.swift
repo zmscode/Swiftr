@@ -99,6 +99,9 @@ struct AppCommands: Commands {
 				.keyboardShortcut("l", modifiers: [.command, .option])
 			Button("Inspector") { model.windowManager?.showInspector() }
 				.keyboardShortcut("i", modifiers: [.command, .option])
+			Button("Conditions") { model.windowManager?.showConditions() }
+				.keyboardShortcut("k", modifiers: [.command, .option])
+			Button("Reset Panel Layout") { model.windowManager?.resetPanelLayout() }
 			Button("Show All Design Windows") {
 				model.hiddenWindows = []
 				model.windowManager?.showPanels()

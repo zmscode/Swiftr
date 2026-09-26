@@ -38,6 +38,8 @@ struct Props: Codable, Equatable {
 	var toggleStyle: ToggleStyleOption = .switch
 	/// The chosen `StyleVariant` id for kinds that have them; nil for the default.
 	var variant: String? = nil
+	/// The `@State` name for a control in generated code (nil derives one from its title).
+	var variableName: String? = nil
 	/// The project image an Image component shows.
 	var imageID: UUID? = nil
 	var contentMode: ContentModeOption = .fill
@@ -45,6 +47,10 @@ struct Props: Codable, Equatable {
 	var imageAnchor: AnchorOption = .center
 	/// Resizing an image keeps its proportions.
 	var lockAspect = true
+	var imageShape: ImageShape = .roundedRect
+	var adjustments = ImageAdjustments()
+	var border: BorderSettings? = nil
+	var shadow: ShadowSettings? = nil
 	var buttonStyle: ButtonStyleOption = .automatic
 	var controlSize: ControlSizeOption = .regular
 	var pickerStyle: PickerStyleOption = .menu
@@ -111,10 +117,15 @@ extension Props {
 		buttonDisplay = v(.buttonDisplay, d.buttonDisplay)
 		toggleStyle = v(.toggleStyle, d.toggleStyle)
 		variant = v(.variant, d.variant)
+		variableName = v(.variableName, d.variableName)
 		imageID = v(.imageID, d.imageID)
 		contentMode = v(.contentMode, d.contentMode)
 		imageAnchor = v(.imageAnchor, d.imageAnchor)
 		lockAspect = v(.lockAspect, d.lockAspect)
+		imageShape = v(.imageShape, d.imageShape)
+		adjustments = v(.adjustments, d.adjustments)
+		border = v(.border, d.border)
+		shadow = v(.shadow, d.shadow)
 		buttonStyle = v(.buttonStyle, d.buttonStyle)
 		controlSize = v(.controlSize, d.controlSize)
 		pickerStyle = v(.pickerStyle, d.pickerStyle)

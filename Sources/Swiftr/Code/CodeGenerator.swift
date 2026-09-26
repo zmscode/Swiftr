@@ -5,10 +5,15 @@ import SwiftUI
 struct CodeGenerator {
 	private let project: Project
 	private var states: [String] = []
-	private var counter = 0
 	private var usesOpenWindow = false
 	private var usesDismiss = false
 	private var usesCircleFit = false
+	/// The window being generated, for its conditions.
+	private var window: DesignWindow?
+	/// `@State` names for this view's controls, assigned up front so conditions can refer to
+	/// controls that come later in the view.
+	private var stateNames: [UUID: String] = [:]
+	private var usedNames: Set<String> = ["body", "openWindow", "dismiss"]
 
 	private init(project: Project) { self.project = project }
 
@@ -67,6 +72,8 @@ struct CodeGenerator {
 	// MARK: Views
 
 	private mutating func view(_ w: DesignWindow) -> String {
+		window = w
+		assignStateNames(w.root)
 		var body = emit(w.root, level: 2, isRoot: true)
 		// A fixed-size window takes its size from its content.
 		if !w.settings.resizable {
@@ -86,6 +93,10 @@ struct CodeGenerator {
 	/// The SwiftUI for one component, with any state or environment it uses declared above it.
 	static func snippet(for node: Node, in project: Project) -> String {
 		var generator = CodeGenerator(project: project)
+		if let i = project.windowIndex(containing: node.id) {
+			generator.window = project.windows[i]
+			generator.assignStateNames(project.windows[i].root)
+		}
 		let body = generator.emit(node, level: 0)
 		var declarations: [String] = []
 		if generator.usesOpenWindow {
@@ -115,7 +126,16 @@ struct CodeGenerator {
 		return usesGlass ? "macOS 26" : "macOS 15"
 	}
 
+	/// A component's code, wrapped in `if … { }` when it has a condition.
 	private mutating func emit(_ node: Node, level: Int, isRoot: Bool = false) -> String {
+		guard !isRoot, let condition = window?.conditions.condition(for: node.id),
+			let test = boolSwift(condition)
+		else { return emitComponent(node, level: level, isRoot: isRoot) }
+		let pad = String(repeating: "    ", count: level)
+		return "\(pad)if \(test) {\n" + emitComponent(node, level: level + 1, isRoot: isRoot) + "\n\(pad)}"
+	}
+
+	private mutating func emitComponent(_ node: Node, level: Int, isRoot: Bool = false) -> String {
 		let pad = String(repeating: "    ", count: level)
 		let p = node.props
 		// The root, and a lone container in the window, fill the window (as in the design windows).
@@ -196,16 +216,16 @@ struct CodeGenerator {
 			head =
 				"Link(\(Self.literal(p.text)), destination: URL(string: \(Self.literal(p.url)))!)"
 		case .textField:
-			let name = newState("text", type: "String", initial: "\"\"")
+			let name = newState(node, "text", type: "String", initial: "\"\"")
 			head = "TextField(\(Self.literal(p.placeholder)), text: $\(name))"
 		case .secureField:
-			let name = newState("password", type: "String", initial: "\"\"")
+			let name = newState(node, "password", type: "String", initial: "\"\"")
 			head = "SecureField(\(Self.literal(p.placeholder)), text: $\(name))"
 		case .textEditor:
-			let name = newState("text", type: "String", initial: "\"\"")
+			let name = newState(node, "text", type: "String", initial: "\"\"")
 			head = "TextEditor(text: $\(name))"
 		case .toggle:
-			let name = newState("isOn", type: "Bool", initial: p.isOn ? "true" : "false")
+			let name = newState(node, "isOn", type: "Bool", initial: p.isOn ? "true" : "false")
 			head = "Toggle(\(Self.literal(p.text)), isOn: $\(name))"
 			// A checkbox is the macOS default, so only the others need a style.
 			switch p.toggleStyle {
@@ -214,14 +234,14 @@ struct CodeGenerator {
 			case .button: mods.append(".toggleStyle(.button)")
 			}
 		case .slider:
-			let name = newState("value", type: "Double", initial: Self.number(p.value))
+			let name = newState(node, "value", type: "Double", initial: Self.number(p.value))
 			head = "Slider(value: $\(name), in: 0...1)"
 		case .stepper:
-			let name = newState("count", type: "Int", initial: String(Int(p.value)))
+			let name = newState(node, "count", type: "Int", initial: String(Int(p.value)))
 			let title = String(Self.literal(p.text).dropLast()) + ": \\(\(name))\""
 			head = "Stepper(\(title), value: $\(name))"
 		case .picker:
-			let name = newState("selection", type: "Int", initial: String(p.selectedIndex))
+			let name = newState(node, "selection", type: "Int", initial: String(p.selectedIndex))
 			let items = p.options.enumerated()
 				.map { "\(pad)    Text(\(Self.literal($1))).tag(\($0))" }
 				.joined(separator: "\n")
@@ -232,7 +252,7 @@ struct CodeGenerator {
 			case .radioGroup: mods.append(".pickerStyle(.radioGroup)")
 			}
 		case .datePicker:
-			let name = newState("date", type: "Date", initial: "Date()")
+			let name = newState(node, "date", type: "Date", initial: "Date()")
 			let components: String
 			switch p.dateComponents {
 			case .date: components = ".date"
@@ -300,7 +320,7 @@ struct CodeGenerator {
 				p.text.isEmpty ? "Section" : "Section(\(Self.literal(p.text)))", node.children,
 				level: level)
 		case .disclosureGroup:
-			let name = newState("isExpanded", type: "Bool", initial: p.isOn ? "true" : "false")
+			let name = newState(node, "isExpanded", type: "Bool", initial: p.isOn ? "true" : "false")
 			let inner = String(repeating: "    ", count: level + 1)
 			head =
 				"DisclosureGroup(\(Self.literal(p.text)), isExpanded: $\(name)) {\n\(inner)"
@@ -313,6 +333,13 @@ struct CodeGenerator {
 				if p.contentMode != .stretch {
 					mods.append(".aspectRatio(contentMode: .\(p.contentMode.rawValue))")
 				}
+				// Adjustments that change something, in the same order as the design windows.
+				let a = p.adjustments
+				if a.grayscale != 0 { mods.append(".grayscale(\(Self.number(a.grayscale)))") }
+				if a.saturation != 1 { mods.append(".saturation(\(Self.number(a.saturation)))") }
+				if a.brightness != 0 { mods.append(".brightness(\(Self.number(a.brightness)))") }
+				if a.contrast != 1 { mods.append(".contrast(\(Self.number(a.contrast)))") }
+				if a.blur != 0 { mods.append(".blur(radius: \(Self.number(a.blur)))") }
 			} else {
 				head = "Image(systemName: \"photo\")"
 			}
@@ -321,7 +348,7 @@ struct CodeGenerator {
 			// emitted by the parent).
 			head = block(stackOpen("VStack", kind: .vstack), node.children, level: level)
 		case .tabView:
-			let name = newState("tab", type: "Int", initial: String(p.selectedIndex))
+			let name = newState(node, "tab", type: "Int", initial: String(p.selectedIndex))
 			var tabs: [String] = []
 			for (index, tab) in node.children.enumerated() {
 				let tabPad = String(repeating: "    ", count: level + 1)
@@ -379,10 +406,14 @@ struct CodeGenerator {
 		if p.fillHeight || fillsWindow { flexible.append("maxHeight: .infinity") }
 		if !flexible.isEmpty { mods.append(".frame(\(flexible.joined(separator: ", ")))") }
 		if node.kind == .photo {
-			mods.append(
-				p.cornerRadius > 0
-					? ".clipShape(.rect(cornerRadius: \(Self.number(p.cornerRadius))))"
-					: ".clipped()")
+			switch p.imageShape {
+			case .roundedRect:
+				mods.append(p.cornerRadius > 0 ? ".clipShape(.rect(cornerRadius: \(Self.number(p.cornerRadius))))" : ".clipped()")
+			case .circle: mods.append(".clipShape(.circle)")
+			case .capsule: mods.append(".clipShape(.capsule)")
+			}
+			// An image's border follows its shape.
+			if let border = p.border { mods.append(Self.borderOverlay(border, shape: Self.imageShapeCode(p))) }
 		}
 		if p.padding > 0 { mods.append(".padding(\(Self.number(p.padding)))") }
 		if let bg = p.background {
@@ -390,12 +421,21 @@ struct CodeGenerator {
 				".background(\(Self.color(bg)), in: RoundedRectangle(cornerRadius: \(Self.number(p.cornerRadius))))"
 			)
 		}
+		// Other components' borders go around their background.
+		if node.kind != .photo, let border = p.border {
+			mods.append(Self.borderOverlay(border, shape: "RoundedRectangle(cornerRadius: \(Self.number(p.cornerRadius)))"))
+		}
 		if let glass = p.glass, node.kind != .button {
 			if glass.shape == .circle {
 				usesCircleFit = true
 				mods.append(".circleFit()")
 			}
 			mods.append(Self.glassEffect(glass, cornerRadius: p.cornerRadius))
+		}
+		if let shadow = p.shadow {
+			mods.append(
+				".shadow(color: \(Self.color(shadow.color)), radius: \(Self.number(shadow.radius)), x: \(Self.number(shadow.x)), y: \(Self.number(shadow.y)))"
+			)
 		}
 		if p.opacity < 1 { mods.append(".opacity(\(Self.number(p.opacity)))") }
 
@@ -409,6 +449,18 @@ struct CodeGenerator {
 		guard p.fontSize != 13 || p.weight != .regular else { return nil }
 		let weight = p.weight == .regular ? "" : ", weight: .\(p.weight.rawValue)"
 		return ".font(.system(size: \(number(p.fontSize))\(weight)))"
+	}
+
+	private static func imageShapeCode(_ p: Props) -> String {
+		switch p.imageShape {
+		case .roundedRect: "RoundedRectangle(cornerRadius: \(number(p.cornerRadius)))"
+		case .circle: "Circle()"
+		case .capsule: "Capsule()"
+		}
+	}
+
+	private static func borderOverlay(_ border: BorderSettings, shape: String) -> String {
+		".overlay { \(shape).strokeBorder(\(color(border.color)), lineWidth: \(number(border.width))) }"
 	}
 
 	private static func buttonStyle(_ option: ButtonStyleOption) -> String? {
@@ -470,11 +522,136 @@ struct CodeGenerator {
 		}
 	}
 
-	private mutating func newState(_ base: String, type: String, initial: String) -> String {
-		counter += 1
-		let name = "\(base)\(counter)"
+	private mutating func newState(_ node: Node, _ base: String, type: String, initial: String) -> String {
+		let name = stateNames[node.id] ?? uniqueName(base)
 		states.append("@State private var \(name): \(type) = \(initial)")
 		return name
+	}
+
+	// MARK: State names
+
+	private static let statefulDefaults: [ComponentKind: String] = [
+		.textField: "text", .secureField: "password", .textEditor: "text", .toggle: "isOn",
+		.slider: "value", .stepper: "count", .picker: "selection", .datePicker: "date",
+		.tabView: "tab", .disclosureGroup: "isExpanded",
+	]
+
+	/// Names each stateful control from its variable name, layer name or title ("Dark mode" →
+	/// `darkMode`), falling back to its kind ("isOn"), unique within the view.
+	private mutating func assignStateNames(_ root: Node) {
+		var root = root
+		var order: [Node] = []
+		root.forEach { order.append($0) }
+		for node in order {
+			guard let fallback = Self.statefulDefaults[node.kind] else { continue }
+			let p = node.props
+			let candidates = [p.variableName, node.name, p.text, p.placeholder]
+			let base = candidates.lazy.compactMap { $0 }.map(Self.camelCase).first { !$0.isEmpty } ?? fallback
+			stateNames[node.id] = uniqueName(base)
+		}
+	}
+
+	private mutating func uniqueName(_ base: String) -> String {
+		var name = base
+		var n = 2
+		while usedNames.contains(name) || Self.swiftKeywords.contains(name) {
+			name = "\(base)\(n)"
+			n += 1
+		}
+		usedNames.insert(name)
+		return name
+	}
+
+	/// "Dark mode" → "darkMode", "2FA code" → "_2faCode".
+	static func camelCase(_ text: String) -> String {
+		let words = text.split { !$0.isLetter && !$0.isNumber }.map(String.init)
+		guard let first = words.first else { return "" }
+		var name = first.lowercased() + words.dropFirst().map { $0.prefix(1).uppercased() + $0.dropFirst() }.joined()
+		if let c = name.first, c.isNumber { name = "_" + name }
+		return name
+	}
+
+	private static let swiftKeywords: Set<String> = [
+		"as", "break", "case", "catch", "class", "continue", "default", "defer", "do", "else", "enum",
+		"extension", "false", "for", "func", "if", "import", "in", "init", "is", "let", "nil", "private",
+		"protocol", "public", "repeat", "return", "self", "static", "struct", "super", "switch", "throw",
+		"true", "try", "var", "where", "while", "some", "any", "View", "Text",
+	]
+
+	// MARK: Conditions
+
+	private func valueType(_ e: ConditionExpr) -> ConditionValueType {
+		switch e {
+		case .control(let id): project.find(id)?.kind.conditionValueType ?? .bool
+		case .constant(.bool): .bool
+		case .constant(.number): .number
+		case .constant(.text): .text
+		default: .bool
+		}
+	}
+
+	/// A condition as a Swift Bool expression, with the same meaning as Preview's evaluation.
+	/// Nil when it refers to a control this view doesn't have.
+	private func boolSwift(_ e: ConditionExpr) -> String? {
+		guard let code = swift(e) else { return nil }
+		switch valueType(e) {
+		case .bool: return code
+		case .number: return "\(code) != 0"
+		case .text: return "!\(code).isEmpty"
+		}
+	}
+
+	private func swift(_ e: ConditionExpr) -> String? {
+		func grouped(_ e: ConditionExpr) -> String? {
+			guard let code = boolSwift(e) else { return nil }
+			switch e {
+			case .and, .or: return "(\(code))"
+			default: return code
+			}
+		}
+		switch e {
+		case .control(let id):
+			return stateNames[id]
+		case .constant(let v):
+			switch v {
+			case .bool(let b): return b ? "true" : "false"
+			case .number(let n): return Self.number(n)
+			case .text(let t): return Self.literal(t)
+			}
+		case .not(let inner):
+			guard let code = grouped(inner) else { return nil }
+			return code.contains(" ") && !code.hasPrefix("(") ? "!(\(code))" : "!\(code)"
+		case .and(let a, let b):
+			guard let l = grouped(a), let r = grouped(b) else { return nil }
+			return "\(l) && \(r)"
+		case .or(let a, let b):
+			guard let l = grouped(a), let r = grouped(b) else { return nil }
+			return "\(l) || \(r)"
+		case .compare(let op, let a, let b):
+			guard let l = swift(a) else { return nil }
+			switch op {
+			case .isEmpty: return "\(l).isEmpty"
+			case .isNotEmpty: return "!\(l).isEmpty"
+			case .contains:
+				guard let b, let r = swift(b) else { return nil }
+				return "\(l).localizedCaseInsensitiveContains(\(r))"
+			default:
+				guard let b, var r = swift(b) else { return nil }
+				var left = l
+				// Steppers and pickers are Int state; compare with fractions as Double.
+				if case .control(let id) = a, [.stepper, .picker].contains(project.find(id)?.kind),
+					case .constant(.number(let n)) = b, n != n.rounded()
+				{
+					left = "Double(\(l))"
+				}
+				if valueType(a) == .text, case .constant(let v) = b { r = Self.literal(v.text) }
+				let symbol = [
+					CompareOp.equal: "==", .notEqual: "!=", .less: "<", .lessOrEqual: "<=",
+					.greater: ">", .greaterOrEqual: ">=",
+				][op] ?? "=="
+				return "\(left) \(symbol) \(r)"
+			}
+		}
 	}
 
 	// MARK: Formatting

@@ -1,5 +1,5 @@
 {
-  "originHash" : "fc81db35ab3edc36b509c9dc60c102e754f151adf24d21439170ff0dfd0af50a",
+  "originHash" : "952ad293efe371d38a64564a68128d327e1892f793e1ade31388adbd1b60bf43",
   "pins" : [
     {
       "identity" : "sliders",
@@ -8,6 +8,15 @@
       "state" : {
         "revision" : "ec520b31bfe2a19740421311fe0a24cae57ed422",
         "version" : "2.0.2"
+      }
+    },
+    {
+      "identity" : "swiftflow",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/aaurelions/SwiftFlow",
+      "state" : {
+        "revision" : "588e3a172c32ab562e0e370c5df57d352dee96f5",
+        "version" : "0.2.0"
       }
     },
     {

@@ -166,3 +166,33 @@ enum ScrollAxisOption: String, Codable, CaseIterable, Identifiable {
 	case vertical, horizontal
 	var id: String { rawValue }
 }
+
+/// The outline an image is cut to.
+enum ImageShape: String, Codable, CaseIterable, Identifiable {
+	case roundedRect, circle, capsule
+	var id: String { rawValue }
+}
+
+/// A stroke around a component (or around an image's shape).
+struct BorderSettings: Codable, Equatable {
+	var color = RGBA(r: 0.5, g: 0.5, b: 0.55)
+	var width = 2.0
+}
+
+struct ShadowSettings: Codable, Equatable {
+	var color = RGBA(r: 0, g: 0, b: 0, a: 0.3)
+	var radius = 8.0
+	var x = 0.0
+	var y = 4.0
+}
+
+/// Color and focus adjustments for images. The defaults change nothing.
+struct ImageAdjustments: Codable, Equatable {
+	var grayscale = 0.0
+	var saturation = 1.0
+	var brightness = 0.0
+	var contrast = 1.0
+	var blur = 0.0
+
+	var isIdentity: Bool { self == ImageAdjustments() }
+}

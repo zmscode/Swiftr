@@ -27,35 +27,27 @@ struct NodeContent<Children: View>: View {
 			.modifier(ButtonAppearance(props: p))
 		case .link:
 			Link(p.text, destination: URL(string: p.url) ?? URL(string: "https://www.apple.com")!)
+		// In Preview, control values live in the model so conditions can react to them; while
+		// editing, controls show their initial values.
 		case .textField:
-			LiveState("") { TextField(p.placeholder, text: $0) }
-				.id(live)
+			TextField(p.placeholder, text: controlValue(.text("")).asText)
 		case .secureField:
-			LiveState("") { SecureField(p.placeholder, text: $0) }
-				.id(live)
+			SecureField(p.placeholder, text: controlValue(.text("")).asText)
 		case .textEditor:
-			LiveState("") { TextEditor(text: $0) }
-				.id(live)
+			TextEditor(text: controlValue(.text("")).asText)
 		case .toggle:
-			LiveState(p.isOn) { Toggle(p.text, isOn: $0).toggleStyle(option: p.toggleStyle) }
-				.id("\(live)\(p.isOn)")
+			Toggle(p.text, isOn: controlValue(.bool(p.isOn)).asBool).toggleStyle(option: p.toggleStyle)
 		case .slider:
-			LiveState(p.value) { Slider(value: $0, in: 0...1) }
-				.id("\(live)\(p.value)")
+			Slider(value: controlValue(.number(p.value)).asNumber, in: 0...1)
 				.frame(minWidth: 100)
 		case .stepper:
-			LiveState(Int(p.value)) { value in
-				Stepper("\(p.text): \(value.wrappedValue)", value: value)
-			}
-			.id("\(live)\(p.value)")
+			let count = controlValue(.number(Double(Int(p.value)))).asInt
+			Stepper("\(p.text): \(count.wrappedValue)", value: count)
 		case .picker:
-			LiveState(p.selectedIndex) { selection in
-				Picker(p.text, selection: selection) {
-					ForEach(p.options.indices, id: \.self) { i in Text(p.options[i]).tag(i) }
-				}
-				.pickerStyle(option: p.pickerStyle)
+			Picker(p.text, selection: controlValue(.number(Double(p.selectedIndex))).asInt) {
+				ForEach(p.options.indices, id: \.self) { i in Text(p.options[i]).tag(i) }
 			}
-			.id("\(live)\(p.selectedIndex)")
+			.pickerStyle(option: p.pickerStyle)
 		case .datePicker:
 			LiveState(Date()) { date in
 				DatePicker(
@@ -136,11 +128,14 @@ struct NodeContent<Children: View>: View {
 			.id("\(live)\(p.isOn)")
 		case .photo:
 			if let image = model.nsImage(p.imageID) {
-				switch p.contentMode {
-				case .stretch: Image(nsImage: image).resizable()
-				case .fit: Image(nsImage: image).resizable().aspectRatio(contentMode: .fit)
-				case .fill: Image(nsImage: image).resizable().aspectRatio(contentMode: .fill)
+				Group {
+					switch p.contentMode {
+					case .stretch: Image(nsImage: image).resizable()
+					case .fit: Image(nsImage: image).resizable().aspectRatio(contentMode: .fit)
+					case .fill: Image(nsImage: image).resizable().aspectRatio(contentMode: .fill)
+					}
 				}
+				.modifier(ImageAdjustmentsModifier(adjustments: p.adjustments))
 			} else {
 				ZStack {
 					Rectangle().fill(Color.secondary.opacity(0.15))
@@ -226,6 +221,11 @@ struct NodeContent<Children: View>: View {
 				model.updateProps(node.id, key: \Props.selectedIndex) { $0.selectedIndex = index }
 			}
 		)
+	}
+
+	/// A control's value: shared live state in Preview, fixed at its initial value while editing.
+	private func controlValue(_ initial: ConditionValue) -> Binding<ConditionValue> {
+		live ? model.liveBinding(node.id, initial: initial) : .constant(initial)
 	}
 
 	private var plainChildren: some View {
@@ -357,4 +357,11 @@ struct ButtonLabel: View {
 			}
 		}
 	}
+}
+
+extension Binding where Value == ConditionValue {
+	var asBool: Binding<Bool> { Binding<Bool>(get: { wrappedValue.bool }, set: { wrappedValue = .bool($0) }) }
+	var asNumber: Binding<Double> { Binding<Double>(get: { wrappedValue.number }, set: { wrappedValue = .number($0) }) }
+	var asInt: Binding<Int> { Binding<Int>(get: { Int(wrappedValue.number) }, set: { wrappedValue = .number(Double($0)) }) }
+	var asText: Binding<String> { Binding<String>(get: { wrappedValue.text }, set: { wrappedValue = .text($0) }) }
 }

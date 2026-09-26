@@ -8,6 +8,7 @@ final class WindowManager: NSObject {
 	let model: DesignModel
 	private var libraryPanel: NSPanel!
 	private var inspectorPanel: NSPanel!
+	private var conditionsPanel: NSPanel!
 	private var codeWindow: NSWindow?
 	private var designWindows: [UUID: DesignWindowController] = [:]
 	private var keyMonitor: Any?
@@ -18,36 +19,39 @@ final class WindowManager: NSObject {
 		super.init()
 		model.windowManager = self
 
-		let screen = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
-		let panelHeight = min(760, screen.height - 40)
+		// Bumping the ".3" names starts everyone on the current default layout once; after that,
+		// where you put the panels is remembered again.
 		libraryPanel = makePanel(
-			title: "Library", autosave: "LibraryPanel",
-			frame: NSRect(
-				x: screen.minX + 20, y: screen.maxY - 20 - panelHeight, width: 270,
-				height: panelHeight),
+			title: "Library", autosave: "LibraryPanel.3", frame: Self.defaultFrame(.library),
 			content: LibraryPanel()
 		)
 		inspectorPanel = makePanel(
-			title: "Inspector", autosave: "InspectorPanel",
-			frame: NSRect(
-				x: screen.maxX - 330, y: screen.maxY - 20 - panelHeight, width: 310,
-				height: panelHeight),
+			title: "Inspector", autosave: "InspectorPanel.3", frame: Self.defaultFrame(.inspector),
 			content: InspectorView()
 		)
+		conditionsPanel = makePanel(
+			title: "Conditions", autosave: "ConditionsPanel.1", frame: Self.defaultFrame(.conditions),
+			keyOnlyIfNeeded: false, content: ConditionsPanel()
+		)
+		conditionsPanel.minSize = NSSize(width: 480, height: 260)
+		NotificationCenter.default.addObserver(
+			forName: NSWindow.willCloseNotification, object: conditionsPanel, queue: .main
+		) { _ in UserDefaults.standard.set(false, forKey: WindowManager.conditionsOpenKey) }
 
 		sync()
 		observeModel()
 		installKeyMonitor()
 		installDragCleanup()
 		showPanels()
+		if UserDefaults.standard.bool(forKey: Self.conditionsOpenKey) { conditionsPanel.orderFront(nil) }
 		if let first = model.project.windows.first { focus(first.id) }
 	}
 
 	// MARK: Panels
 
-	private func makePanel(title: String, autosave: String, frame: NSRect, content: some View)
-		-> NSPanel
-	{
+	private func makePanel(
+		title: String, autosave: String, frame: NSRect, keyOnlyIfNeeded: Bool = true, content: some View
+	) -> NSPanel {
 		let panel = NSPanel(
 			contentRect: frame,
 			styleMask: [.titled, .closable, .resizable, .utilityWindow],
@@ -55,8 +59,9 @@ final class WindowManager: NSObject {
 		panel.title = title
 		panel.isFloatingPanel = true
 		panel.hidesOnDeactivate = true
-		// Stay out of the way: only take keyboard focus when a text field is clicked.
-		panel.becomesKeyOnlyIfNeeded = true
+		// Stay out of the way: only take keyboard focus when a text field is clicked. (The
+		// Conditions panel takes it on any click, so Delete and arrows reach the node editor.)
+		panel.becomesKeyOnlyIfNeeded = keyOnlyIfNeeded
 		panel.isReleasedWhenClosed = false
 		panel.isRestorable = false
 		panel.minSize = NSSize(width: 240, height: 300)
@@ -69,6 +74,36 @@ final class WindowManager: NSObject {
 		return panel
 	}
 
+	private enum PanelSide { case library, inspector, conditions }
+
+	/// Panels default to hanging from just below the top of the screen, 85% of the usable height
+	/// tall, a little in from the left (Library) and right (Inspector) edges.
+	private static func defaultFrame(_ side: PanelSide) -> NSRect {
+		let screen = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
+		let inset: CGFloat = 16
+		let topGap: CGFloat = 12
+		let height = (screen.height * 0.85).rounded()
+		let y = screen.maxY - topGap - height
+		switch side {
+		case .library: return NSRect(x: screen.minX + inset, y: y, width: 270, height: height)
+		case .inspector: return NSRect(x: screen.maxX - inset - 310, y: y, width: 310, height: height)
+		case .conditions:
+			// Along the bottom, between the Library and the Inspector.
+			let left = screen.minX + inset + 270 + inset
+			let right = screen.maxX - inset - 310 - inset
+			let h = min(420, (screen.height * 0.4).rounded())
+			return NSRect(x: left, y: screen.minY + inset, width: max(480, right - left), height: h)
+		}
+	}
+
+	/// Window → Reset Panel Layout.
+	func resetPanelLayout() {
+		libraryPanel.setFrame(Self.defaultFrame(.library), display: true, animate: true)
+		inspectorPanel.setFrame(Self.defaultFrame(.inspector), display: true, animate: true)
+		conditionsPanel.setFrame(Self.defaultFrame(.conditions), display: true, animate: true)
+		showPanels()
+	}
+
 	func showPanels() {
 		libraryPanel.orderFront(nil)
 		inspectorPanel.orderFront(nil)
@@ -76,6 +111,16 @@ final class WindowManager: NSObject {
 
 	func showLibrary() { libraryPanel.orderFront(nil) }
 	func showInspector() { inspectorPanel.orderFront(nil) }
+
+	/// Opens the Conditions panel, on a particular window's conditions if given.
+	func showConditions(for windowID: UUID? = nil) {
+		if let windowID { model.conditionsWindowID = windowID }
+		conditionsPanel.makeKeyAndOrderFront(nil)
+		UserDefaults.standard.set(true, forKey: Self.conditionsOpenKey)
+	}
+
+	/// Whether the Conditions panel was open, so it reopens at launch.
+	nonisolated private static let conditionsOpenKey = "conditionsPanelOpen"
 
 	func showCode() {
 		if codeWindow == nil {
@@ -165,10 +210,12 @@ final class WindowManager: NSObject {
 		dragCleanupMonitor = NSEvent.addLocalMonitorForEvents(
 			matching: [.mouseMoved, .leftMouseUp, .leftMouseDown, .mouseEntered, .mouseExited]
 		) { [weak self] event in
-			if let model = self?.model, model.dropIndicator != nil,
-				NSEvent.pressedMouseButtons & 1 == 0
+			if let model = self?.model, NSEvent.pressedMouseButtons & 1 == 0,
+				model.dropIndicator != nil || model.dropPreview != nil || model.layerDropTarget != nil
 			{
 				model.dropIndicator = nil
+				model.layerDropTarget = nil
+				model.endDropPreview()
 				model.draggingPayload = nil
 			}
 			return event

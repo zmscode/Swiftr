@@ -63,7 +63,6 @@ struct LayerRow: View {
 	let item: LayerItem
 	let window: DesignWindow
 	let isInsideSelection: Bool
-	@State private var isTargeted = false
 	@State private var isHovered = false
 	@State private var isRenaming = false
 	@State private var draftName = ""
@@ -114,24 +113,14 @@ struct LayerRow: View {
 			RoundedRectangle(cornerRadius: 5)
 				.fill(rowFill)
 		)
-		.overlay {
-			if isTargeted {
-				RoundedRectangle(cornerRadius: 5).strokeBorder(panelTheme.accent, lineWidth: 1.5)
-			}
-		}
+		.overlay { dropMarker }
 		.contentShape(Rectangle())
 		.onHover { isHovered = $0 }
 		.onTapGesture { click() }
 		.if(!isRoot) {
 			$0.dragSource(payload: "move:\(node.id.uuidString)", model: model, kind: node.kind)
 		}
-		.dropDestination(for: String.self) { items, location in
-			let payload = model.draggingPayload ?? items.first
-			model.draggingPayload = nil
-			return model.handleDrop(payload, dropTarget(at: location))
-		} isTargeted: {
-			isTargeted = $0
-		}
+		.onDrop(of: [.plainText], delegate: LayerDropDelegate(model: model, nodeID: node.id, target: dropTarget))
 		.contextMenu { NodeMenu(id: node.id) }
 	}
 
@@ -211,12 +200,97 @@ struct LayerRow: View {
 	}
 
 	/// Containers accept drops into themselves except near their top edge; leaves insert before/after.
+	/// Where a drop at `location` on this row goes. Containers: the top quarter inserts before,
+	/// the bottom quarter after (when folded or empty), the middle inside. Leaves: above or below.
 	private func dropTarget(at location: CGPoint) -> DropTarget {
 		if isRoot { return .into(node.id) }
 		if node.kind.isContainer {
-			return location.y < Self.rowHeight * 0.25
-				? .beside(node.id, after: false) : .into(node.id)
+			let showsChildren = !node.children.isEmpty && !model.collapsed.contains(node.id)
+			if location.y < Self.rowHeight * 0.25 { return .beside(node.id, after: false) }
+			if location.y > Self.rowHeight * 0.75 && !showsChildren { return .beside(node.id, after: true) }
+			return .into(node.id)
 		}
 		return .beside(node.id, after: location.y > Self.rowHeight / 2)
+	}
+
+	/// The insertion line above or below this row, or a highlight when dropping into it.
+	@ViewBuilder
+	private var dropMarker: some View {
+		switch model.layerDropTarget {
+		case .into(let id) where id == node.id:
+			RoundedRectangle(cornerRadius: 5)
+				.fill(panelTheme.accent.opacity(0.15))
+				.overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(panelTheme.accent, lineWidth: 1.5))
+				.allowsHitTesting(false)
+		case .beside(let id, let after) where id == node.id:
+			VStack {
+				if after { Spacer() }
+				HStack(spacing: 0) {
+					Circle().strokeBorder(panelTheme.accent, lineWidth: 1.5).frame(width: 6, height: 6)
+					Rectangle().fill(panelTheme.accent).frame(height: 2)
+				}
+				.padding(.leading, 20 + CGFloat(item.depth) * 14)
+				.offset(y: after ? 2 : -2)
+				if !after { Spacer() }
+			}
+			.allowsHitTesting(false)
+		default:
+			EmptyView()
+		}
+	}
+}
+
+/// Drops onto a layer row. While hovering it drives the insertion line here and the live preview
+/// of the rearranged layout in the design windows.
+struct LayerDropDelegate: DropDelegate {
+	let model: DesignModel
+	let nodeID: UUID
+	let target: (CGPoint) -> DropTarget
+
+	func validateDrop(info: DropInfo) -> Bool {
+		!model.isPreviewing && info.hasItemsConforming(to: [.plainText])
+	}
+
+	func dropUpdated(info: DropInfo) -> DropProposal? {
+		let target = target(info.location)
+		model.previewDrop(at: target)
+		// Only show the marker where the drop is allowed (the preview is empty otherwise).
+		let allowed = model.dropPreview?.target == target
+		let marker = allowed ? target : nil
+		if model.layerDropTarget != marker { model.layerDropTarget = marker }
+		guard allowed else { return DropProposal(operation: .forbidden) }
+		return DropProposal(operation: model.draggingPayload?.hasPrefix("move:") == true ? .move : .copy)
+	}
+
+	func dropExited(info: DropInfo) {
+		// Another row may already have taken over; only clear what belongs to this row.
+		if let current = model.layerDropTarget, refersToThisRow(current) {
+			model.layerDropTarget = nil
+			model.previewDrop(at: nil)
+		}
+	}
+
+	func performDrop(info: DropInfo) -> Bool {
+		let target = target(info.location)
+		model.layerDropTarget = nil
+		if let payload = model.draggingPayload {
+			model.draggingPayload = nil
+			return model.handleDrop(payload, target)
+		}
+		model.endDropPreview()
+		guard let provider = info.itemProviders(for: [.plainText]).first else { return false }
+		let model = model
+		_ = provider.loadTransferable(type: String.self) { result in
+			Task { @MainActor in
+				if case .success(let payload) = result { model.handleDrop(payload, target) }
+			}
+		}
+		return true
+	}
+
+	private func refersToThisRow(_ target: DropTarget) -> Bool {
+		switch target {
+		case .into(let id), .at(let id, _), .beside(let id, _): id == nodeID
+		}
 	}
 }

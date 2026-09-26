@@ -8,7 +8,8 @@ struct DesignWindowContent: View {
 	@State private var frames: [UUID: CGRect] = [:]
 
 	var body: some View {
-		if let window = model.project.window(windowID) {
+		// During a drag over the layers list, show the layout as it would be after the drop.
+		if let window = model.displayedProject.window(windowID) {
 			NodeView(node: window.root, windowID: windowID, parentAxis: nil)
 				.background {
 					// Space around the root (e.g. under a hidden title bar) selects the root.

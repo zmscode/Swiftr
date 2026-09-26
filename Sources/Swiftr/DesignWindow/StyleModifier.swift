@@ -27,20 +27,70 @@ struct StyleModifier: ViewModifier {
 				maxWidth: props.fillWidth || fillsWindow ? .infinity : nil,
 				maxHeight: props.fillHeight || fillsWindow ? .infinity : nil
 			)
-			// Images crop to their frame (rounded by the corner radius) when filling it.
-			.if(kind == .photo) { $0.clipShape(RoundedRectangle(cornerRadius: props.cornerRadius)) }
+			// Images are cut to their shape (and crop to their frame when filling it); an image's
+			// border follows that shape.
+			.if(kind == .photo) { $0.clipShape(props.imageClipShape) }
+			.if(kind == .photo && props.border != nil) { $0.overlay { BorderOverlay(border: props.border, shape: props.imageClipShape) } }
 			.padding(props.padding)
 			.if(props.background != nil) {
 				$0.background(
 					props.background?.color ?? .clear,
 					in: RoundedRectangle(cornerRadius: props.cornerRadius))
 			}
+			// Other components' borders go around their background.
+			.if(kind != .photo && props.border != nil) {
+				$0.overlay { BorderOverlay(border: props.border, shape: AnyShape(RoundedRectangle(cornerRadius: props.cornerRadius))) }
+			}
 			// Buttons get glass through their button style instead (see `ButtonAppearance`).
 			.modifier(
 				GlassModifier(
 					glass: kind == .button ? nil : props.glass, cornerRadius: props.cornerRadius)
 			)
+			.if(props.shadow != nil) {
+				$0.shadow(
+					color: props.shadow?.color.color ?? .clear, radius: props.shadow?.radius ?? 0,
+					x: props.shadow?.x ?? 0, y: props.shadow?.y ?? 0)
+			}
 			.opacity(props.opacity)
+	}
+}
+
+struct BorderOverlay: View {
+	let border: BorderSettings?
+	let shape: AnyShape
+
+	var body: some View {
+		if let border {
+			// Same as `strokeBorder` (drawn inside the edge): a double-width stroke, clipped to the shape.
+			shape.stroke(border.color.color, lineWidth: border.width * 2)
+				.clipShape(shape)
+				.allowsHitTesting(false)
+		}
+	}
+}
+
+extension Props {
+	/// The shape an image is cut to. Rounded rectangles use the corner radius.
+	var imageClipShape: AnyShape {
+		switch imageShape {
+		case .roundedRect: AnyShape(RoundedRectangle(cornerRadius: cornerRadius))
+		case .circle: AnyShape(Circle())
+		case .capsule: AnyShape(Capsule())
+		}
+	}
+}
+
+/// Grayscale, saturation, brightness, contrast and blur, applied to an image before it's framed.
+struct ImageAdjustmentsModifier: ViewModifier {
+	let adjustments: ImageAdjustments
+
+	func body(content: Content) -> some View {
+		content
+			.grayscale(adjustments.grayscale)
+			.saturation(adjustments.saturation)
+			.brightness(adjustments.brightness)
+			.contrast(adjustments.contrast)
+			.blur(radius: adjustments.blur)
 	}
 }
 

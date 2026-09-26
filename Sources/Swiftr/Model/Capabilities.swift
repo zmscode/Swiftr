@@ -27,6 +27,11 @@ extension ComponentKind {
 		.contains(self)
 	}
 
+	/// Borders and shadows suit anything drawn, not spacers or structural containers.
+	var supportsBorderAndShadow: Bool {
+		![.spacer, .tab, .pane, .section, .splitView, .tabView, .navigationStack, .menu].contains(self)
+	}
+
 	/// Tabs fill their tab view, and sections are sized by their form or list.
 	var hasSize: Bool { ![.tab, .section].contains(self) }
 }

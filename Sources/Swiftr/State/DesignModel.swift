@@ -1,12 +1,6 @@
 import AppKit
 import SwiftUI
 
-enum DropTarget: Equatable {
-	case into(UUID)  // append to a container
-	case at(UUID, index: Int)  // insert into a container at a position
-	case beside(UUID, after: Bool)  // insert next to a sibling
-}
-
 @Observable @MainActor
 final class DesignModel {
 	var project = Project()
@@ -39,8 +33,16 @@ final class DesignModel {
 	var activeWindowID: UUID?
 	/// In Preview mode the design windows behave like the finished app and can't be edited.
 	var isPreviewing = false {
-		didSet { inPlaceEdit = nil }
+		didSet {
+			inPlaceEdit = nil
+			// Each preview starts from the controls' initial values.
+			liveValues = [:]
+		}
 	}
+	/// The design window whose conditions the Conditions panel shows (nil follows the selection).
+	var conditionsWindowID: UUID?
+	/// Control values while previewing, so conditions can react to them.
+	var liveValues: [UUID: ConditionValue] = [:]
 	/// The component being edited directly in its window after a double-click: inline text,
 	/// the symbol browser, or shape handles, depending on its kind.
 	var inPlaceEdit: UUID?
@@ -116,7 +118,7 @@ final class DesignModel {
 
 	// MARK: Bindings for the inspector
 
-	private struct EditKey: Hashable {
+	struct EditKey: Hashable {
 		let id: UUID?
 		let path: AnyKeyPath
 	}
@@ -356,71 +358,87 @@ final class DesignModel {
 	/// Drag payloads are plain strings: "new:<kind>" from the palette, "move:<uuid>" from a window or the layers list.
 	@discardableResult
 	func handleDrop(_ payload: String?, _ target: DropTarget) -> Bool {
-		guard let payload, !isPreviewing else { return false }
-
-		let node: Node
-		var movingID: UUID?
-
-		if payload.hasPrefix("new:"),
-			let kind = ComponentKind(rawValue: String(payload.dropFirst(4)))
-		{
-			node = Node.make(kind)
-		} else if payload.hasPrefix("move:"),
-			let id = UUID(uuidString: String(payload.dropFirst(5))),
-			!project.isRoot(id),
-			let existing = project.find(id)
-		{
-			node = existing
-			movingID = id
-		} else {
-			return false
-		}
-		guard canDrop(node, movingID: movingID, at: target) else { return false }
-
+		guard !isPreviewing, let (node, movingID) = dropped(payload) else { return false }
+		var next = project
+		// A new component placed by a preview must not be reused by the next drop (same id).
+		endDropPreview()
+		guard next.drop(node, movingID: movingID, at: target) else { return false }
 		snapshot()
-		var target = target
-		if let movingID {
-			// Removing the node first shifts later siblings in the same container up by one.
-			if case .at(let parentID, let index) = target,
-				project.parent(of: movingID)?.id == parentID,
-				let old = project.find(parentID)?.children.firstIndex(where: { $0.id == movingID }),
-				old < index
-			{
-				target = .at(parentID, index: index - 1)
-			}
-			project.remove(movingID)
-		}
-		place(node, at: target)
+		project = next
+		// A component moved to another window takes its place in that window's state instead.
+		project.pruneConditions()
+		if let parentID = next.parentID(for: target) { collapsed.remove(parentID) }
 		selection = node.id
 		return true
 	}
 
-	/// Whether `node` may go at `target`: not inside itself, and only where the container accepts it
-	/// (e.g. a Control Group takes buttons, toggles and pickers).
-	func canDrop(_ node: Node, movingID: UUID?, at target: DropTarget) -> Bool {
-		let parentID: UUID?
-		switch target {
-		case .into(let id), .at(let id, _): parentID = id
-		case .beside(let id, _): parentID = project.parent(of: id)?.id
+	/// The component a payload places, and the id it's moving from (nil for a new one).
+	private func dropped(_ payload: String?) -> (Node, UUID?)? {
+		guard let payload else { return nil }
+		if payload.hasPrefix("new:"), let kind = ComponentKind(rawValue: String(payload.dropFirst(4))) {
+			// Reuse the same new component while previewing, so the preview and drop agree.
+			if let cached = previewNode, cached.payload == payload { return (cached.node, nil) }
+			return (Node.make(kind), nil)
 		}
-		guard let parentID, let parent = project.find(parentID) else { return false }
-		if movingID != nil, node.find(parentID) != nil { return false }
-		return parent.kind.accepts(node.kind)
+		if payload.hasPrefix("move:"), let id = UUID(uuidString: String(payload.dropFirst(5))),
+			!project.isRoot(id), let existing = project.find(id)
+		{
+			return (existing, id)
+		}
+		return nil
+	}
+
+	func canDrop(_ node: Node, movingID: UUID?, at target: DropTarget) -> Bool {
+		project.canDrop(node, movingID: movingID, at: target)
 	}
 
 	private func place(_ node: Node, at target: DropTarget) {
-		switch target {
-		case .into(let parentID):
-			project.modify(parentID) { $0.children.append(node) }
-			collapsed.remove(parentID)
-		case .at(let parentID, let index):
-			project.modify(parentID) {
-				$0.children.insert(node, at: min(max(index, 0), $0.children.count))
-			}
-			collapsed.remove(parentID)
-		case .beside(let siblingID, let after):
-			project.insert(node, beside: siblingID, after: after)
+		project.drop(node, movingID: nil, at: target)
+		if let parentID = project.parentID(for: target) { collapsed.remove(parentID) }
+	}
+
+	// MARK: Drop preview
+
+	/// While dragging over the layers list: the project as it would be after the drop, which the
+	/// design windows show instead, and the component being placed (drawn faded).
+	struct DropPreview {
+		let project: Project
+		let ghostID: UUID
+		let target: DropTarget
+	}
+
+	var dropPreview: DropPreview?
+	/// Where a drag over the layers list would drop, for its insertion line.
+	var layerDropTarget: DropTarget?
+	@ObservationIgnored private var previewNode: (payload: String, node: Node)?
+
+	/// What the design windows draw: the drop preview while there is one, otherwise the project.
+	var displayedProject: Project { dropPreview?.project ?? project }
+
+	/// Shows (or clears, for nil) what dropping the current drag at `target` would do.
+	func previewDrop(at target: DropTarget?) {
+		guard let target, let payload = draggingPayload, !isPreviewing else {
+			if dropPreview != nil { dropPreview = nil }
+			return
 		}
+		if dropPreview?.target == target { return }
+		if payload.hasPrefix("new:"), previewNode?.payload != payload,
+			let kind = ComponentKind(rawValue: String(payload.dropFirst(4)))
+		{
+			previewNode = (payload, Node.make(kind))
+		}
+		guard let (node, movingID) = dropped(payload) else { return }
+		var next = project
+		if next.drop(node, movingID: movingID, at: target) {
+			dropPreview = DropPreview(project: next, ghostID: node.id, target: target)
+		} else {
+			dropPreview = nil
+		}
+	}
+
+	func endDropPreview() {
+		dropPreview = nil
+		previewNode = nil
 	}
 
 	/// Double-click in the palette: add into the selected container, or next to the selected item,
@@ -459,6 +477,7 @@ final class DesignModel {
 		snapshot()
 		let parentID = project.parent(of: first)?.id
 		for id in ids { project.remove(id) }
+		project.pruneConditions()
 		selection = parentID
 	}
 

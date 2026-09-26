@@ -31,6 +31,7 @@ struct NodeInspector: View {
 					if kind.isContainer && kind != .menu { layoutSection }
 					if kind.hasSize { sizeSection }
 					if kind == .photo { imageSection }
+					if kind == .photo { adjustmentsSection }
 					appearanceSection
 					if kind.usesFont { typographySection }
 					if kind.isShape { fillSection }
@@ -41,7 +42,10 @@ struct NodeInspector: View {
 					if kind.supportsBackground {
 						colorSection("Background", \.background, fallback: .lightGray)
 					}
+					if kind.supportsBorderAndShadow { borderSection }
+					if kind.supportsBorderAndShadow { shadowSection }
 					if kind.supportsGlass { glassSection }
+					if !isRoot { ConditionSection(model: model, node: node) }
 					codeSection
 				}
 				.padding(.bottom, 16)
@@ -440,6 +444,15 @@ struct NodeInspector: View {
 					}
 				}
 			}
+			PanelCaptioned("Shape") {
+				PanelSegmented(
+					selection: bind(\.imageShape),
+					items: [
+						(.roundedRect, .icon("rectangle", "Rounded rectangle (uses corner radius)")),
+						(.circle, .icon("circle", "Circle")),
+						(.capsule, .icon("capsule", "Capsule")),
+					])
+			}
 			PanelCaptioned("Mode") {
 				PanelSegmented(
 					selection: bind(\.contentMode),
@@ -463,6 +476,89 @@ struct NodeInspector: View {
 				}
 			}
 		}
+	}
+
+	// MARK: Effects
+
+	private var adjustmentsSection: some View {
+		let a = props.adjustments
+		return PanelSection("Adjustments") {
+			PanelGrid {
+				PanelNumberField(
+					label: .icon("circle.lefthalf.filled.righthalf.striped.horizontal"),
+					value: adjust(\.grayscale, scale: 100), range: 0...100, unit: "%", help: "Grayscale")
+			} b: {
+				PanelNumberField(
+					label: .icon("drop"), value: adjust(\.saturation, scale: 100), range: 0...300, unit: "%",
+					help: "Saturation (100% is unchanged)")
+			}
+			PanelGrid {
+				PanelNumberField(
+					label: .icon("sun.max"), value: adjust(\.brightness, scale: 100), range: -100...100, unit: "%",
+					help: "Brightness (0% is unchanged)")
+			} b: {
+				PanelNumberField(
+					label: .icon("circle.righthalf.filled"), value: adjust(\.contrast, scale: 100), range: 0...300,
+					unit: "%", help: "Contrast (100% is unchanged)")
+			}
+			HStack {
+				PanelNumberField(label: .icon("aqi.medium"), value: adjust(\.blur, scale: 1), range: 0...50, unit: "pt", help: "Blur")
+					.frame(maxWidth: 120)
+				Spacer()
+				if !a.isIdentity {
+					PanelTextButton(title: "Reset", symbol: "arrow.counterclockwise") {
+						bind(\.adjustments).wrappedValue = ImageAdjustments()
+					}
+				}
+			}
+		}
+	}
+
+	/// An image adjustment shown scaled (e.g. 0...1 as a percentage).
+	private func adjust(_ path: WritableKeyPath<ImageAdjustments, Double>, scale: Double) -> Binding<Double> {
+		Binding(
+			get: { (props.adjustments[keyPath: path] * scale).rounded() },
+			set: { value in model.updateProps(id, key: \Props.adjustments) { $0.adjustments[keyPath: path] = value / scale } }
+		)
+	}
+
+	@ViewBuilder
+	private var borderSection: some View {
+		if let border = props.border {
+			PanelSection("Border", onRemove: { bind(\.border).wrappedValue = nil }) {
+				PanelColorRow(color: optional(\.border, \.color, current: border))
+				PanelNumberField(label: .icon("lineweight"), value: optional(\.border, \.width, current: border), range: 0...50, unit: "pt", help: "Width")
+					.frame(maxWidth: 120)
+			}
+		} else {
+			PanelSection("Border", onAdd: { bind(\.border).wrappedValue = BorderSettings() }) { EmptyView() }
+		}
+	}
+
+	@ViewBuilder
+	private var shadowSection: some View {
+		if let shadow = props.shadow {
+			PanelSection("Shadow", onRemove: { bind(\.shadow).wrappedValue = nil }) {
+				PanelColorRow(color: optional(\.shadow, \.color, current: shadow))
+				HStack(spacing: 6) {
+					PanelNumberField(label: .letter("X"), value: optional(\.shadow, \.x, current: shadow), range: -200...200, help: "Horizontal offset")
+					PanelNumberField(label: .letter("Y"), value: optional(\.shadow, \.y, current: shadow), range: -200...200, help: "Vertical offset")
+					PanelNumberField(label: .icon("aqi.medium"), value: optional(\.shadow, \.radius, current: shadow), range: 0...200, help: "Blur radius")
+				}
+			}
+		} else {
+			PanelSection("Shadow", onAdd: { bind(\.shadow).wrappedValue = ShadowSettings() }) { EmptyView() }
+		}
+	}
+
+	/// A binding into one field of an optional property group (border, shadow) that's present.
+	private func optional<Group: Equatable, Value: Equatable>(
+		_ group: WritableKeyPath<Props, Group?>, _ field: WritableKeyPath<Group, Value>, current: Group
+	) -> Binding<Value> {
+		Binding(
+			get: { props[keyPath: group]?[keyPath: field] ?? current[keyPath: field] },
+			set: { value in model.updateProps(id, key: group) { $0[keyPath: group]?[keyPath: field] = value } }
+		)
 	}
 
 	// MARK: Appearance

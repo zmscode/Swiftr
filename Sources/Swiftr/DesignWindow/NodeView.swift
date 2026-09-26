@@ -11,7 +11,9 @@ struct NodeView: View {
 
 	private var isRoot: Bool { model.project.isRoot(node.id) }
 	/// The root, or a lone container in the window: fills it and isn't outlined.
-	private var isWindowContent: Bool { model.project.fillsWindow(node.id) }
+	private var isWindowContent: Bool { model.displayedProject.fillsWindow(node.id) }
+	/// The component a drop preview is placing, drawn faded.
+	private var isGhost: Bool { model.dropPreview?.ghostID == node.id }
 	private var isSelected: Bool { model.selectedIDs.contains(node.id) }
 	/// This container is where the current drag would land.
 	private var isDropTarget: Bool {
@@ -34,7 +36,16 @@ struct NodeView: View {
 		.modifier(StyleModifier(props: node.props, kind: node.kind, fillsWindow: isWindowContent))
 
 		if model.isPreviewing {
+			// Conditions apply in Preview: a component whose condition is false isn't there at all.
+			if model.isShown(node.id) { styled }
+		} else if isGhost {
 			styled
+				.opacity(0.45)
+				.overlay(
+					RoundedRectangle(cornerRadius: 3)
+						.strokeBorder(Color.selectionBlue, style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
+				)
+				.allowsHitTesting(false)
 		} else if node.kind.isContainer {
 			// Containers handle taps on their own empty space; children handle their own. Drops are
 			// handled once per window (see `WindowDropDelegate`), using the frames reported here.
@@ -52,6 +63,7 @@ struct NodeView: View {
 				.onHover { hover($0) }
 				.overlay(outline)
 				.overlay(alignment: .topLeading) { nameTag }
+				.overlay(alignment: .topTrailing) { conditionBadge }
 		} else {
 			// Real controls are inert; a transparent layer on top takes clicks and drags instead.
 			styled
@@ -60,6 +72,7 @@ struct NodeView: View {
 				.overlay(leafInteractionLayer)
 				.overlay(outline)
 				.overlay(alignment: .topLeading) { nameTag }
+				.overlay(alignment: .topTrailing) { conditionBadge }
 				.overlay { inPlaceEditor }
 				.popover(isPresented: symbolBrowserShown, arrowEdge: .bottom) {
 					SymbolBrowser(selection: model.propBinding(node.id, \.systemImage)) {
@@ -174,6 +187,22 @@ struct NodeView: View {
 			}
 		}
 		.allowsHitTesting(false)
+	}
+
+	/// Marks a component that only shows under a condition (it's always shown while editing).
+	@ViewBuilder
+	private var conditionBadge: some View {
+		if let condition = model.condition(for: node.id) {
+			Text("if")
+				.font(.system(size: 9, weight: .bold, design: .monospaced))
+				.foregroundStyle(.white)
+				.padding(.horizontal, 4)
+				.padding(.vertical, 1)
+				.background(Capsule().fill(Color.orange))
+				.fixedSize()
+				.offset(x: 4, y: -6)
+				.help("Shows when \(model.describe(condition))")
+		}
 	}
 
 	/// A small label above the selected component naming it.

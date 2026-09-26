@@ -49,6 +49,8 @@ struct DesignWindow: Identifiable, Codable, Equatable {
 	var root = Node.defaultRoot()
 	/// Top-left corner on screen while designing. Not part of the generated code.
 	var position: CGPoint?
+	/// Which components show when, from this window's controls.
+	var conditions = ConditionGraph()
 
 	/// The `id:` of the generated `Window` scene, e.g. "contentView".
 	var sceneID: String { viewName.prefix(1).lowercased() + viewName.dropFirst() }
@@ -177,6 +179,75 @@ struct ImageAsset: Identifiable, Codable, Equatable {
 	var data: Data
 	/// The original file extension, used when exporting.
 	var fileExtension: String
+}
+
+// MARK: - Dropping
+
+enum DropTarget: Equatable {
+	case into(UUID)  // append to a container
+	case at(UUID, index: Int)  // insert into a container at a position
+	case beside(UUID, after: Bool)  // insert next to a sibling
+}
+
+extension Project {
+	/// The container a drop at `target` would go into.
+	func parentID(for target: DropTarget) -> UUID? {
+		switch target {
+		case .into(let id), .at(let id, _): id
+		case .beside(let id, _): parent(of: id)?.id
+		}
+	}
+
+	/// Whether `node` may go at `target`: not into itself or its own children, not next to itself,
+	/// and only where the container accepts it (e.g. a Control Group takes buttons and toggles).
+	func canDrop(_ node: Node, movingID: UUID?, at target: DropTarget) -> Bool {
+		guard let parentID = parentID(for: target), let parent = find(parentID) else { return false }
+		if movingID != nil {
+			if node.find(parentID) != nil { return false }
+			if case .beside(let sibling, _) = target, sibling == movingID { return false }
+		}
+		return parent.kind.accepts(node.kind)
+	}
+
+	/// Moves (`movingID` set) or adds `node` at `target`. Returns false, changing nothing, if the
+	/// drop isn't allowed.
+	@discardableResult
+	mutating func drop(_ node: Node, movingID: UUID?, at target: DropTarget) -> Bool {
+		guard canDrop(node, movingID: movingID, at: target) else { return false }
+		var target = target
+		if let movingID {
+			// Removing the node first shifts later siblings in the same container up by one.
+			if case .at(let parentID, let index) = target, parent(of: movingID)?.id == parentID,
+				let old = find(parentID)?.children.firstIndex(where: { $0.id == movingID }), old < index
+			{
+				target = .at(parentID, index: index - 1)
+			}
+			remove(movingID)
+		}
+		switch target {
+		case .into(let parentID):
+			modify(parentID) { $0.children.append(node) }
+		case .at(let parentID, let index):
+			modify(parentID) { $0.children.insert(node, at: min(max(index, 0), $0.children.count)) }
+		case .beside(let siblingID, let after):
+			insert(node, beside: siblingID, after: after)
+		}
+		return true
+	}
+}
+
+extension DesignWindow {
+	/// Missing keys fall back to defaults, so files saved before a property existed still open.
+	init(from decoder: Decoder) throws {
+		let c = try decoder.container(keyedBy: CodingKeys.self)
+		self.init()
+		id = try c.decode(UUID.self, forKey: .id)
+		viewName = (try? c.decodeIfPresent(String.self, forKey: .viewName)) ?? viewName
+		settings = (try? c.decodeIfPresent(WindowSettings.self, forKey: .settings)) ?? settings
+		root = try c.decode(Node.self, forKey: .root)
+		position = try? c.decodeIfPresent(CGPoint.self, forKey: .position)
+		conditions = (try? c.decodeIfPresent(ConditionGraph.self, forKey: .conditions)) ?? ConditionGraph()
+	}
 }
 
 /// Layout files from before multi-window support: one tree plus canvas size.
